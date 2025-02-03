@@ -543,7 +543,7 @@ void test_dpqb_solver_ERE(   Eigen::MatrixXcd &dmatpqb,
     test_Bmat_2plus1_system_ERE( B_mat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, a0_m2, r0_m2 );
     //std::cout<<"here"<<std::endl; 
     
-    negative_GSpqb_mat(negG_mat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, qb, m1, m2, eps_for_ope, eps_for_cutoff, total_P);
+    negative_GSpqb_mat(negG_mat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, qb_val, m1, m2, eps_for_ope, eps_for_cutoff, total_P);
     //std::cout<<"here"<<std::endl; 
     
     LinearSolver_2(B_mat, d_mat, negG_mat, relerr); 

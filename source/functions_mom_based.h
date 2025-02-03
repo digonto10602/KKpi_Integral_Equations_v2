@@ -365,6 +365,19 @@ comp M2k_ERE_s2k(   double eta_i,
 
 }
 
+//This is M2k with sigma_k/m_i^2 >> 1 approximation
+comp M2k_ERE_large_sigk_approx( double eta_i, 
+                                comp sigk, 
+                                double a0    )
+{
+    comp ii = {0.0,1.0};
+    comp pi = std::acos(-1.0); 
+    comp real_part = (-16.0*pi/a0)/(eta_i*(4.0/(a0*a0) + sigk)); 
+    comp imag_part = (8.0*pi*sigk/a0)/(eta_i*(4.0/(a0*a0) + sigk)); 
+
+    return real_part + ii*imag_part; 
+}
+
 
 #endif 
 
