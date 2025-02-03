@@ -778,7 +778,7 @@ void test_dpqb_vs_N_building_1()
 void test_dpqb_for_m1m1_vs_N_building_1()
 {
     double m1 = 1.0;
-    double m2 = 0.9;//0.99999999990;//0.999; 
+    double m2 = 1.0;//0.99999999990;//0.999; 
     double a0_1 = -2.0; 
     double a0_2 = -2.0; 
     double r0_1 = 0.0; 
@@ -844,8 +844,8 @@ void test_dpqb_for_m1m1_vs_N_building_1()
     comp delEn = std::abs(En_initial - En_final)/En_points; 
 
     //N range = [50, 500] and [500, 5000]
-    int N_initial = 5; 
-    int N_final = 500; 
+    int N_initial = 10; 
+    int N_final = 100; 
     int N_points = 10; 
     int del_N = std::abs(N_initial - N_final)/N_points; 
 
@@ -867,9 +867,9 @@ void test_dpqb_for_m1m1_vs_N_building_1()
     std::cout<<"M2k large sigk approx test"<<std::endl; 
     std::cout<<"M2k test 1 = "<<M2k_test1<<std::endl;
     std::cout<<"M2k test 2 = "<<M2k_test2<<std::endl; 
-    //for(int i=0; i<(int)N_points; ++i)
+    for(int i=0; i<(int)N_points; ++i)
     {
-        int i=0; 
+        //int i=0; 
         //comp En = En_initial + ((comp)i)*delEn; 
         //comp qb; 
         int number_of_points = N_initial + i*del_N; 
@@ -887,7 +887,7 @@ void test_dpqb_for_m1m1_vs_N_building_1()
 
         eps_for_m2k = energy_dependent_epsilon(eta, En, qb, sigb1plus, kmax, m1, number_of_points);
         eps_for_ope = eps_for_m2k; 
-        char debug = 'y'; 
+        char debug = 'n'; 
         test_dpqb_solver_ERE(dpqbmat, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, r0_1, a0_2, r0_2, number_of_points, debug); 
         test_dqq_interpolator(dqqmat, dpqbmat, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, r0_1, a0_2, r0_2, number_of_points, debug);
 
@@ -1877,6 +1877,127 @@ void test_Gs_surface()
     fout.close(); 
 }
 
+void compare_Bmats()
+{
+    double m1 = 1.0; 
+    double m2 = 0.9; 
+
+    double a0_1 = -2.0; 
+    double a0_2 = -2.0; 
+    double r0_1 = 0.0; 
+    double r0_2 = 0.0; 
+
+    double total_P = 0.0; 
+    double r = 0.0; 
+
+    double eps_for_m2k = 0.001; 
+    double eps_for_ope = 0.001; 
+    double eps_for_cutoff = 0.0; 
+
+    double number_of_points = 500.0; 
+
+    comp sigb1plus = sigma_b_plus(a0_1, m1, m2);
+    comp sigb1minus = sigma_b_minus(a0_1, m1, m2); 
+    comp sigb2plus = sigma_b_plus(a0_2, m1, m1); 
+    comp sigb2minus = sigma_b_minus(a0_2, m1, m1); 
+    comp phib1plus = std::sqrt(sigb1plus) + m1;
+    comp phib1minus = std::sqrt(sigb1minus) + m1;
+    comp phib2plus = std::sqrt(sigb2plus) + m2;
+    comp phib2minus = std::sqrt(sigb2minus) + m2;
+
+    std::cout<<"sigb1+ = "<<sigb1plus<<std::endl; 
+    std::cout<<"sigb1- = "<<sigb1minus<<std::endl; 
+    
+    std::cout<<"sigb2+ = "<<sigb2plus<<std::endl; 
+    std::cout<<"sigb2- = "<<sigb2minus<<std::endl; 
+
+    std::cout<<"phib+ threshold 1 = "<<phib1plus<<std::endl; 
+    std::cout<<"phib- threshold 1 = "<<phib1minus<<std::endl; 
+    std::cout<<"phib+ threshold 2 = "<<phib2plus<<std::endl; 
+    std::cout<<"phib- threshold 2 = "<<phib2minus<<std::endl; 
+
+    
+
+
+    comp threeparticle_threshold = (m1 + m1 + m2); 
+
+    //comp En = (phib1 + threeparticle_threshold)/2.0;
+
+    std::cout<<"threeparticle threshold = "<<threeparticle_threshold<<std::endl; 
+
+    comp En_initial = phib1plus; 
+    comp En_final = threeparticle_threshold; 
+    comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
+    comp En_2 = En_initial; 
+    comp En = (En_1 + En_2)/2.0; 
+
+    //qb vals for i=1 and i=2 case:
+    comp qb_val1plus = qb_i(En, sigb1plus, m1);
+    comp qb_val1minus = qb_i(En, sigb1minus, m1);
+    comp qb_val2plus = qb_i(En, sigb2plus, m2);
+    comp qb_val2minus = qb_i(En, sigb2minus, m2);
+
+    std::cout<<"qb 1 + = "<<qb_val1plus<<std::endl;
+    std::cout<<"qb 1 - = "<<qb_val1minus<<std::endl;
+    std::cout<<"qb 2 + = "<<qb_val2plus<<std::endl;
+    std::cout<<"qb 2 - = "<<qb_val2minus<<std::endl;
+
+    comp kmax_for_m1 = pmom(En, 0.0, m1); 
+    comp kmax_for_m2 = pmom(En, 0.0, m2); 
+    comp epsilon_for_kvec = 1.0e-5; 
+
+    std::cout<<"kmax_for_m1 = "<<kmax_for_m1<<std::endl; 
+    std::cout<<"kmax_for_m2 = "<<kmax_for_m2<<std::endl; 
+
+    std::vector<comp> pvec_for_m1m2;
+    std::vector<comp> weights_for_pvec_for_m1m2; 
+    std::vector<comp> kvec_for_m1m1; 
+    std::vector<comp> weights_for_kvec_for_m1m1; 
+
+    flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
+    flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points);
+
+    std::cout<<"pvec for m1m2 = "<<std::endl; 
+    vec_printer(pvec_for_m1m2); 
+    std::cout<<"kvec for m1m1 = "<<std::endl; 
+    vec_printer(kvec_for_m1m1); 
+    std::cout<<"=============================="<<std::endl;
+
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+    int total_size = size1 + size2; 
+    Eigen::MatrixXcd B_mat1(total_size, total_size); 
+    Eigen::MatrixXcd B_mat2(total_size, total_size); 
+
+    test_Bmat_2plus1_system_ERE( B_mat1, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, r0_1, a0_2, r0_2 );
+    
+    test_Bmat_GMtilde_multiplied_2plus1_system_ERE(B_mat2, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, a0_2); 
+    
+
+    std::cout<<"Bmat1 determinant = "<<B_mat1.determinant()<<std::endl;
+    std::cout<<"Bmat2 determinant = "<<B_mat2.determinant()<<std::endl; 
+
+    /*for(int i=0; i<total_size; ++i)
+    {
+        for(int j=0; j<total_size; ++j)
+        {
+            comp A = B_mat1(i,j); 
+            comp B = B_mat2(i,j); 
+
+            double diff = std::abs(A - B);
+
+            std::cout<<std::setprecision(10); 
+            std::cout<<"i:"<<i<<'\t'
+                     <<"j:"<<j<<'\t'
+                     <<"Bmat1="<<A<<'\t'
+                     <<"Bmat2="<<B<<'\t'
+                     <<"diff="<<diff<<std::endl; 
+        }
+    }*/
+
+
+}
+
 
 int main()
 {
@@ -1896,12 +2017,13 @@ int main()
     //test_delta_rhophib_density();
     //test_M2_sigb_range();
     //test_M2_1(); 
-    test_dpqb_for_m1m1_vs_N_building_1();
+    //test_dpqb_for_m1m1_vs_N_building_1();
     
     //test_Gs();
     //test_Gs_surface();
     //test_kernel_singularities();
     //compare_pcuts();
     
+    compare_Bmats(); 
     return 0;
 }
