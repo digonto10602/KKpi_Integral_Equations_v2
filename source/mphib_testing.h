@@ -9,7 +9,7 @@ for the integral equation which will then be used to solve for KKpi amplitude */
 #include "momentum_vector.h"
 #include "integral_equations_2plus1_system.h"
 #include "linear_solvers_cpu.h"
-#include "gpu_solvers.h"
+//#include "gpu_solvers.h"
 
 
 //This is to calculate the GS(p,qb) matrix where qb is the 
@@ -542,7 +542,13 @@ void test_dpqb_solver_ERE(   Eigen::MatrixXcd &dmatpqb,
 
     test_Bmat_2plus1_system_ERE( B_mat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, a0_m2, r0_m2 );
     //std::cout<<"here"<<std::endl; 
+    //std::cout<<"Bmat 1 determinant = "<<B_mat.determinant()<<std::endl;
+
+    Eigen::MatrixXcd B_mat1; 
+    //test_Bmat_GMtilde_multiplied_2plus1_system_ERE(B_mat1, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, a0_m2); 
     
+    //std::cout<<"Bmat 2 determinant = "<<B_mat1.determinant()<<std::endl; 
+
     negative_GSpqb_mat(negG_mat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, qb_val, m1, m2, eps_for_ope, eps_for_cutoff, total_P);
     //std::cout<<"here"<<std::endl; 
     

@@ -332,7 +332,7 @@ void test_kernel_2plus1_system_ERE(  Eigen::MatrixXcd &kern_mat,
 
             comp G = GS_pk(E, p, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
             comp W = weights*k*k/(pow(2.0*pi,2.0)*omgk);
-            WG_12(i,j) = W*G; 
+            WG_12(i,j) = std::sqrt(2.0)*W*G; 
         }
     }
 
@@ -353,13 +353,13 @@ void test_kernel_2plus1_system_ERE(  Eigen::MatrixXcd &kern_mat,
 
             comp G = GS_pk(E, p, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
             comp W = weights*k*k/(pow(2.0*pi,2.0)*omgk);
-            WG_21(i,j) = W*G; 
+            WG_21(i,j) = std::sqrt(2.0)*W*G; 
         }
     }
 
 
-    WG_12 = std::sqrt(2.0)*WG_12; 
-    WG_21 = std::sqrt(2.0)*WG_21; 
+    //WG_12 = std::sqrt(2.0)*WG_12; 
+    //WG_21 = std::sqrt(2.0)*WG_21; 
 
     Eigen::MatrixXcd WG_mat(size1 + size2, size1 + size2); 
     //std::cout<<__PRETTY_FUNCTION__<<std::endl; 
@@ -441,6 +441,116 @@ void test_Bmat_2plus1_system_ERE(    Eigen::MatrixXcd &B_mat,
     //std::cout<<"test_Bmat_2plus1_system_ERE"<<std::endl; 
     
     B_mat = Imat + kern_mat; 
+}
+
+
+//Here we matrix multiply the Gs(p,k')M2(k') to build 
+//the B matrix, this is to check the numbers for the 
+//actual B matrix used in the calculation coded above 
+//This only depends on the scattering length a0_i 
+void test_Bmat_GMtilde_multiplied_2plus1_system_ERE(    Eigen::MatrixXcd &B_mat,
+                                                        comp En, 
+                                                        std::vector<comp> &pvec_for_m1m2,
+                                                        std::vector<comp> &kvec_for_m1m1, 
+                                                        std::vector<comp> &weights_for_pvec_for_m1m2,
+                                                        std::vector<comp> &weights_for_kvec_for_m1m1,
+                                                        double m1, 
+                                                        double m2,
+                                                        double eps_for_m2k,
+                                                        double eps_for_ope,
+                                                        double eps_for_cutoff,
+                                                        comp total_P,
+                                                        double a0_m1,
+                                                        double a0_m2    )
+{
+    comp pi = std::acos(-1.0); 
+    comp ii = {0.0, 1.0}; 
+
+    double mi = m1; 
+    double mj = m1; 
+    double mk = m2; 
+
+    int size1 = pvec_for_m1m2.size();
+    int size2 = kvec_for_m1m1.size(); 
+
+    Eigen::MatrixXcd WG11M1(size1, size1); 
+    Eigen::MatrixXcd WG12M2(size1, size2);
+    Eigen::MatrixXcd WG21M1(size2, size1); 
+    Eigen::MatrixXcd Filler22(size2, size2); 
+    Filler22 = Eigen::MatrixXcd::Zero(size2, size2); 
+
+    //for G11 M1 
+    mi = m1; 
+    mj = m1; 
+    mk = m2; 
+
+    for(int i=0; i<size1; ++i)
+    {
+        for(int j=0; j<size1; ++j)
+        {
+            comp mom_p = pvec_for_m1m2[i]; 
+            comp mom_k = pvec_for_m1m2[j]; 
+            comp weights = weights_for_pvec_for_m1m2[j]; 
+            comp omgk = omega_func(mom_k, mj); 
+            comp W = weights*mom_k*mom_k/(std::pow(2.0*pi,2.0)*omgk);
+            comp G = GS_pk(En, mom_p, mom_k, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
+            comp M = M2k_tilde_ERE(En, mom_k, total_P, a0_m1, 0.0, mi, mj, mk, eps_for_m2k);
+
+            WG11M1(i,j) = W*G*M; 
+        }
+    } 
+
+    //for G12 M2 
+    mi = m1; 
+    mj = m2; 
+    mk = m1; 
+
+    for(int i=0; i<size1; ++i)
+    {
+        for(int j=0; j<size2; ++j)
+        {
+            comp mom_p = pvec_for_m1m2[i]; 
+            comp mom_k = kvec_for_m1m1[j]; 
+            comp weights = weights_for_kvec_for_m1m1[j]; 
+            comp omgk = omega_func(mom_k, mj); 
+            comp W = weights*mom_k*mom_k/(std::pow(2.0*pi,2.0)*omgk);
+            comp G = GS_pk(En, mom_p, mom_k, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
+            comp M = M2k_tilde_ERE(En, mom_k, total_P, a0_m2, 0.0, mj, mk, mi, eps_for_m2k);
+
+            WG12M2(i,j) = std::sqrt(2)*W*G*M; 
+        }
+    }
+
+    //for G21 M1 
+    mi = m2; 
+    mj = m1; 
+    mk = m1; 
+
+    for(int i=0; i<size2; ++i)
+    {
+        for(int j=0; j<size1; ++j)
+        {
+            comp mom_p = kvec_for_m1m1[i]; 
+            comp mom_k = pvec_for_m1m2[j]; 
+            comp weights = weights_for_pvec_for_m1m2[j]; 
+            comp omgk = omega_func(mom_k, mj); 
+            comp W = weights*mom_k*mom_k/(std::pow(2.0*pi,2.0)*omgk);
+            comp G = GS_pk(En, mom_p, mom_k, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
+            comp M = M2k_tilde_ERE(En, mom_k, total_P, a0_m1, 0.0, mj, mk, mi, eps_for_m2k);
+
+            WG21M1(i,j) = std::sqrt(2)*W*G*M; 
+        }
+    }
+
+    Eigen::MatrixXcd Imat(size1 + size2, size1 + size2); 
+    Imat = Eigen::MatrixXcd::Identity(size1 + size2, size1 + size2); 
+
+    Eigen::MatrixXcd WGM(size1 + size2, size1 + size2); 
+    WGM << WG11M1, WG12M2, 
+           WG21M1, Filler22; 
+    
+    B_mat = Imat + WGM; 
+
 }
 
 
