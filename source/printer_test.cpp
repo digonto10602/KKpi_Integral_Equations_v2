@@ -760,7 +760,7 @@ void test_dpqb_vs_N_building_1()
 
         comp mphib = gval*gval*dqq11; 
         comp rhophib_mphib = rhophib(qb, En)*mphib; 
-        comp rhophib_val = rhophib(qb,En); 
+        comp rhophib_val = rhophib(qb, En); 
 
         double diff = (double)std::abs((std::imag(1.0/mphib) + std::real(rhophib_val))/(std::real(rhophib_val)))*100;
         
@@ -779,8 +779,8 @@ void test_dpqb_for_m1m1_vs_N_building_1()
 {
     double m1 = 1.0;
     double m2 = 0.9;//0.99999999990;//0.999; 
-    double a0_1 = 2.0; 
-    double a0_2 = 2.0; 
+    double a0_1 = -2.0; 
+    double a0_2 = -2.0; 
     double r0_1 = 0.0; 
     double r0_2 = 0.0; 
 
@@ -789,8 +789,8 @@ void test_dpqb_for_m1m1_vs_N_building_1()
     double r = 0; 
     //int number_of_points = 250;  
 
-    double eps_for_m2k = 0.001;
-    double eps_for_ope = 0.001; 
+    double eps_for_m2k = 0.0000001;
+    double eps_for_ope = 0.0000001; 
     double eps_for_cutoff = 0.0; 
 
     /*-----------------------------------------*/
@@ -815,6 +815,9 @@ void test_dpqb_for_m1m1_vs_N_building_1()
     std::cout<<"phib+ threshold 2 = "<<phib2plus<<std::endl; 
     std::cout<<"phib- threshold 2 = "<<phib2minus<<std::endl; 
 
+    
+
+
     comp threeparticle_threshold = (m1 + m1 + m2); 
 
     //comp En = (phib1 + threeparticle_threshold)/2.0;
@@ -827,13 +830,13 @@ void test_dpqb_for_m1m1_vs_N_building_1()
     
     /* Generating a file here to check */
     std::ofstream fout;
-    std::string filename =  "mphib_above_for_m1m1_phibthreshold_a" + std::to_string((int)a0_1) + "_vs_N_en_onefourth_1.dat";
+    std::string filename =  "mphib_above_for_m1m1_phibthreshold_a" + std::to_string((int)a0_1) + "_vs_N_en_onefourth_2.dat";
 
     fout.open(filename.c_str()); 
 
-    comp En_initial = phib2plus; 
+    comp En_initial = phib1plus; 
     comp En_final = threeparticle_threshold; 
-    comp En_1 = (phib2plus + threeparticle_threshold)/2.0; 
+    comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
     comp En_2 = En_initial; 
     comp En = (En_1 + En_2)/2.0; 
 
@@ -841,13 +844,32 @@ void test_dpqb_for_m1m1_vs_N_building_1()
     comp delEn = std::abs(En_initial - En_final)/En_points; 
 
     //N range = [50, 500] and [500, 5000]
-    int N_initial = 2; 
-    int N_final = 10; 
-    int N_points = 4; 
+    int N_initial = 5; 
+    int N_final = 500; 
+    int N_points = 10; 
     int del_N = std::abs(N_initial - N_final)/N_points; 
 
-    for(int i=0; i<(int)N_points; ++i)
+    //qb vals for i=1 and i=2 case:
+    comp qb_val1plus = qb_i(En, sigb1plus, m1);
+    comp qb_val1minus = qb_i(En, sigb1minus, m1);
+    comp qb_val2plus = qb_i(En, sigb2plus, m2);
+    comp qb_val2minus = qb_i(En, sigb2minus, m2);
+
+    std::cout<<"qb 1 + = "<<qb_val1plus<<std::endl;
+    std::cout<<"qb 1 - = "<<qb_val1minus<<std::endl;
+    std::cout<<"qb 2 + = "<<qb_val2plus<<std::endl;
+    std::cout<<"qb 2 - = "<<qb_val2minus<<std::endl;
+
+    //test M2k for large sigk approx //
+    comp sigk_test = 50000000000; 
+    comp M2k_test1 = M2k_ERE_s2k(0.5, En, sigk_test, 0.0, 2.0, 0.0, m1, m1, m2, eps_for_m2k); 
+    comp M2k_test2 = M2k_ERE_large_sigk_approx(0.5, sigk_test, 2.0); 
+    std::cout<<"M2k large sigk approx test"<<std::endl; 
+    std::cout<<"M2k test 1 = "<<M2k_test1<<std::endl;
+    std::cout<<"M2k test 2 = "<<M2k_test2<<std::endl; 
+    //for(int i=0; i<(int)N_points; ++i)
     {
+        int i=0; 
         //comp En = En_initial + ((comp)i)*delEn; 
         //comp qb; 
         int number_of_points = N_initial + i*del_N; 
@@ -860,12 +882,12 @@ void test_dpqb_for_m1m1_vs_N_building_1()
 
         double eta = 55; 
 
-        comp qb = qb_i(En, sigb2plus, m1);
+        comp qb = qb_i(En, sigb1plus, m1);
         comp kmax = pmom(En, 0.0, m1); 
 
         eps_for_m2k = energy_dependent_epsilon(eta, En, qb, sigb1plus, kmax, m1, number_of_points);
         eps_for_ope = eps_for_m2k; 
-        char debug = 'n'; 
+        char debug = 'y'; 
         test_dpqb_solver_ERE(dpqbmat, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, r0_1, a0_2, r0_2, number_of_points, debug); 
         test_dqq_interpolator(dqqmat, dpqbmat, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, r0_1, a0_2, r0_2, number_of_points, debug);
 
@@ -873,17 +895,20 @@ void test_dpqb_for_m1m1_vs_N_building_1()
         {
             std::cout<<"pvec i="<<i<<'\t'<<"val = "<<pvec_for_m1m2[i]<<std::endl;
         }*/
-
+        
+        comp dqq11 = dqqmat(0,0); 
         comp dqq22 = dqqmat(1,1); 
         
         double eta_1 = 0.5; 
-        comp gval = gfunc_i(eta_1, sigb2plus, m1, m1);//gfunc(sigb1plus,a0_1);
+        comp gval = gfunc_i(eta_1, sigb1plus, m1, m2);//gfunc(sigb1plus,a0_1);
+        
         std::cout<<"gval = "<<gval<<'\t'
                  <<"dqq00 = "<<dqqmat(0,0)<<'\t'
                  <<"dqq01 = "<<dqqmat(0,1)<<'\t'
                  <<"dqq10 = "<<dqqmat(1,0)<<'\t'
                  <<"dqq11 = "<<dqqmat(1,1)<<std::endl;
-        comp mphib = gval*gval*dqq22; 
+        
+        comp mphib = gval*gval*dqq11; 
         comp rhophib_mphib = rhophib(qb, En)*mphib; 
         
         comp rhophib_val = rhophib(qb,En); 
@@ -892,7 +917,13 @@ void test_dpqb_for_m1m1_vs_N_building_1()
         double diff = (double)std::abs((std::imag(1.0/mphib) + std::real(rhophib_val))/(std::real(rhophib_val)))*100;
         
         std::cout<<std::setprecision(20)<<En.real()<<'\t'<<(En*En).real()<<'\t'<<rhophib_mphib.real()<<'\t'<<rhophib_mphib.imag()<<'\t'<<diff<<'\t'<<number_of_points<<std::endl; 
-        fout<<std::setprecision(20)<<std::real(En)<<'\t'<<std::real(En*En)<<'\t'<<rhophib_mphib.real()<<'\t'<<rhophib_mphib.imag()<<'\t'<<diff<<'\t'<<number_of_points<<std::endl; 
+        fout<<std::setprecision(20)
+            <<std::real(En)<<'\t'
+            <<std::real(En*En)<<'\t'
+            <<rhophib_mphib.real()<<'\t'
+            <<rhophib_mphib.imag()<<'\t'
+            <<diff<<'\t'
+            <<number_of_points<<std::endl; 
         
     
     }
@@ -1483,7 +1514,8 @@ void test_kernel_singularities()
     double mi, mj, mk; 
 
     std::string filename1 = "p_ope_cut.dat";
-    std::ofstream fout;
+    std::string filename2 = "omega_cut.dat";
+    std::ofstream fout, fout1;
     fout.open(filename1.c_str()); 
 
 
@@ -1864,12 +1896,12 @@ int main()
     //test_delta_rhophib_density();
     //test_M2_sigb_range();
     //test_M2_1(); 
-    //test_dpqb_for_m1m1_vs_N_building_1();
+    test_dpqb_for_m1m1_vs_N_building_1();
     
     //test_Gs();
-    test_Gs_surface();
-    test_kernel_singularities();
-    compare_pcuts();
+    //test_Gs_surface();
+    //test_kernel_singularities();
+    //compare_pcuts();
     
     return 0;
 }
