@@ -2011,9 +2011,7 @@ void plot_single_integral_equation_components()
     double total_P = 0.0; 
     double r = 0.0; 
 
-    double eps_for_m2k = 0.001; 
-    double eps_for_ope = 0.001; 
-    double eps_for_cutoff = 0.0; 
+    
 
     double number_of_points = 500.0; 
     double number_of_points_1 = 500.0; 
@@ -2053,6 +2051,8 @@ void plot_single_integral_equation_components()
     comp En_2 = En_initial; 
     comp En = (En_1 + En_2)/2.0; 
 
+    
+
     //qb vals for i=1 and i=2 case:
     comp qb_val1plus = qb_i(En, sigb1plus, m1);
     comp qb_val1minus = qb_i(En, sigb1minus, m1);
@@ -2076,7 +2076,14 @@ void plot_single_integral_equation_components()
     std::vector<comp> kvec_for_m1m1; 
     std::vector<comp> weights_for_kvec_for_m1m1; 
 
-    
+    double eta_for_eps = 25.0; 
+    double eps_for_m2k = energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
+    double eps_for_ope = eps_for_m2k; 
+    double eps_for_cutoff = 0.0; 
+
+    double eta_1 = 0.5; 
+    double eta_2 = 1.0; 
+
     flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
     flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points_1);
 
@@ -2086,8 +2093,53 @@ void plot_single_integral_equation_components()
     vec_printer(kvec_for_m1m1); 
     std::cout<<"=============================="<<std::endl;
 
+    
     int size1 = pvec_for_m1m2.size(); 
     int size2 = kvec_for_m1m1.size(); 
+
+    int qb1plus_ind, qb1minus_ind, qb2plus_ind; 
+
+    for(int i=0; i<size1-1; ++i)
+    {
+        double pval1 = pvec_for_m1m2[i].real(); 
+        double pval2 = pvec_for_m1m2[i+1].real(); 
+        double kval1 = kvec_for_m1m1[i].real(); 
+        double kval2 = kvec_for_m1m1[i+1].real(); 
+
+        if(qb_val1plus.real()>=pval1 && qb_val1plus.real()<=pval2)
+        {
+            qb1plus_ind = i; 
+        }
+
+        if(qb_val1minus.real()>=pval1 && qb_val1minus.real()<=pval2)
+        {
+            qb1minus_ind = i; 
+        }
+
+        if(qb_val2plus.real()>=kval1 && qb_val2plus.real()<=kval2)
+        {
+            qb2plus_ind = i; 
+        }
+
+    }
+
+    std::cout<<"q1+ ind = "<<qb1plus_ind<<'\t'
+             <<"qb = "<<qb_val1plus<<'\t'
+             <<"p_i = "<<pvec_for_m1m2[qb1plus_ind]<<'\t'
+             <<"p_i+1 = "<<pvec_for_m1m2[qb1plus_ind+1]<<std::endl; 
+
+    std::cout<<"q1- ind = "<<qb1minus_ind<<'\t'
+             <<"qb = "<<qb_val1minus<<'\t'
+             <<"p_i = "<<pvec_for_m1m2[qb1minus_ind]<<'\t'
+             <<"p_i+1 = "<<pvec_for_m1m2[qb1minus_ind+1]<<std::endl; 
+
+
+    std::cout<<"q2+ ind = "<<qb2plus_ind<<'\t'
+             <<"qb = "<<qb_val2plus<<'\t'
+             <<"p_i = "<<kvec_for_m1m1[qb2plus_ind]<<'\t'
+             <<"p_i+1 = "<<kvec_for_m1m1[qb2plus_ind+1]<<std::endl; 
+ 
+
     int total_size = size1 + size2; 
     Eigen::MatrixXcd B_mat1(total_size, total_size); 
     Eigen::MatrixXcd B_mat2(total_size, total_size); 
@@ -2101,7 +2153,10 @@ void plot_single_integral_equation_components()
     //std::cout<<"Bmat2 determinant = "<<B_mat2.determinant()<<std::endl; 
 
     //Print and compare the two Bmats we have
-    /*for(int i=0; i<total_size; ++i)
+    char bmat_compare = 'n'; 
+    if(bmat_compare=='y')
+    {
+    for(int i=0; i<total_size; ++i)
     {
         for(int j=0; j<total_size; ++j)
         {
@@ -2117,13 +2172,22 @@ void plot_single_integral_equation_components()
                      <<"Bmat2="<<B<<'\t'
                      <<"diff="<<diff<<std::endl; 
         }
-    }*/
+    }
+    }
 
-    std::ofstream fout1; 
-    std::string filename;
+    
 
     std::cout<<B_mat1.rows()<<std::endl; 
     std::cout<<B_mat1.cols()<<std::endl; 
+
+
+    //Print all values of Bmat for individual i vals 
+    //and the surface plot of Bmat 
+    char bmat_plots_plus_surface = 'n'; 
+    if(bmat_plots_plus_surface=='y')
+    {
+    std::ofstream fout1; 
+    std::string filename;
 
     std::string filename1 = "B_mat_surface.dat"; 
     std::ofstream fout2; 
@@ -2193,6 +2257,7 @@ void plot_single_integral_equation_components()
                  <<weight_k.imag()<<'\t'
                  <<B_mat1(i,j).real()<<'\t'
                  <<B_mat1(i,j).imag()<<std::endl; 
+            
             fout2<<i<<'\t'
                  <<j<<'\t'
                  <<mom_p.real()<<'\t'
@@ -2209,8 +2274,115 @@ void plot_single_integral_equation_components()
         fout1.close(); 
     }
     fout2.close(); 
-    
+    }
 
+    Eigen::MatrixXcd negGSpqb(total_size, 2); 
+    negative_GSpqb_mat(negGSpqb, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, qb_val1plus, m1, m2, eps_for_ope, eps_for_cutoff, total_P); 
+
+
+    char gmat_plot = 'n';
+    if(gmat_plot=='y')
+    {
+
+        std::ofstream fout3; 
+        std::string filename3 = "gmat_plot.dat";
+
+        fout3.open(filename3.c_str()); 
+
+
+        int gmat_row = negGSpqb.rows(); 
+        int gmat_col = negGSpqb.cols(); 
+        for(int i=0; i<gmat_row; ++i)
+        {
+            for(int j=0; j<gmat_col; ++j)
+            {
+                if(j==0)
+                {
+                    std::cout<<i<<'\t'
+                             <<j<<'\t'
+                            <<negGSpqb(i,j)<<'\t';
+                    fout3<<i<<'\t'
+                         <<negGSpqb(i,j).real()<<'\t'
+                         <<negGSpqb(i,j).imag()<<'\t';
+                }
+                else 
+                {
+                    std::cout<<j<<'\t'
+                             <<negGSpqb(i,j)<<std::endl;
+                    fout3<<negGSpqb(i,j).real()<<'\t'
+                         <<negGSpqb(i,j).imag()<<std::endl;
+                }
+                 
+            }
+        }
+        fout3.close(); 
+
+    }
+
+    Eigen::MatrixXcd dmat; 
+    double relerr; 
+    LinearSolver_2(B_mat1, dmat, negGSpqb, relerr); 
+    std::cout<<"relative error = "<<relerr<<std::endl; 
+
+
+    //Here we plot the dmat for a single 
+    //kinematic energy, En. We plot dmat 
+    //against the index values of the matrix
+    //to check for any arbitrary singularities 
+    //arising in the system. 
+    char dmat_plot = 'y';
+    if(dmat_plot=='y')
+    {
+
+        std::ofstream fout4; 
+        std::string filename4 = "dmat.dat"; 
+
+        fout4.open(filename4.c_str()); 
+
+        int dmat_row = dmat.rows(); 
+        int dmat_col = dmat.cols(); 
+
+        for(int i=0; i<dmat_row; ++i)
+        {
+            for(int j=0; j<dmat_col; ++j)
+            {
+                if(j==0)
+                {
+                    std::cout<<i<<'\t'
+                             <<j<<'\t'
+                             <<dmat(i,j)<<'\t';
+                    fout4<<i<<'\t'
+                         <<dmat(i,j).real()<<'\t'
+                         <<dmat(i,j).imag()<<'\t';
+                }
+                else 
+                {
+                    std::cout<<j<<'\t'
+                             <<dmat(i,j)<<std::endl;
+                    
+                    fout4<<dmat(i,j).real()<<'\t'
+                         <<dmat(i,j).imag()<<std::endl; 
+                }
+            }
+        }
+        fout4.close(); 
+    }
+
+    comp dmat11_qq_val = dmat(qb1plus_ind, 0); 
+    comp g1_val = gfunc_i(eta_1, sigb1plus, m1, m2); 
+    comp mphib_11_test_val = g1_val*g1_val*dmat11_qq_val; 
+
+    comp rhophib_11 = rhophib(qb_val1plus, En); 
+
+    double diff = std::abs(((1.0/mphib_11_test_val).imag() + rhophib_11)/rhophib_11*100.0);
+    
+    std::cout<<"g = "<<g1_val<<std::endl; 
+    std::cout<<"mphib = "<<mphib_11_test_val<<std::endl; 
+    std::cout<<"Im(1/mphib) = "<<(1.0/mphib_11_test_val).imag()<<std::endl;
+    std::cout<<"rhophib = "<<rhophib_11<<std::endl;
+    std::cout<<"delrho = "<<diff<<std::endl;
+
+    
     
    
 
