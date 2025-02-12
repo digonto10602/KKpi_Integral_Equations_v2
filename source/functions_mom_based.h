@@ -147,8 +147,8 @@ comp GS_pk( comp En,
     comp num = zpk + ii*eps - 2.0*pk;
     comp denom = zpk + ii*eps + 2.0*pk;
 
-    comp result = - Hp*Hk/(4.0*pk) * std::log(num/denom); 
-    //comp result = - 1.0/(4.0*pk) * std::log(num/denom); 
+    //comp result = - Hp*Hk/(4.0*pk) * std::log(num/denom); 
+    comp result = - 1.0/(4.0*pk) * std::log(num/denom); 
 
     return result; 
 
