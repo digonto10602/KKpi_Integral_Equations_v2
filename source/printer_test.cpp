@@ -2001,10 +2001,10 @@ void compare_Bmats()
 void plot_single_integral_equation_components()
 {
     double m1 = 1.0; 
-    double m2 = 0.9; 
+    double m2 = 1.0; 
 
-    double a0_1 = -2.0; 
-    double a0_2 = -2.0; 
+    double a0_1 = 2.0; 
+    double a0_2 = 2.0; 
     double r0_1 = 0.0; 
     double r0_2 = 0.0; 
 
@@ -2128,22 +2128,24 @@ void plot_single_integral_equation_components()
              <<"p_i = "<<pvec_for_m1m2[qb1plus_ind]<<'\t'
              <<"p_i+1 = "<<pvec_for_m1m2[qb1plus_ind+1]<<std::endl; 
 
+    /*
     std::cout<<"q1- ind = "<<qb1minus_ind<<'\t'
              <<"qb = "<<qb_val1minus<<'\t'
              <<"p_i = "<<pvec_for_m1m2[qb1minus_ind]<<'\t'
              <<"p_i+1 = "<<pvec_for_m1m2[qb1minus_ind+1]<<std::endl; 
 
-
+    
     std::cout<<"q2+ ind = "<<qb2plus_ind<<'\t'
              <<"qb = "<<qb_val2plus<<'\t'
              <<"p_i = "<<kvec_for_m1m1[qb2plus_ind]<<'\t'
              <<"p_i+1 = "<<kvec_for_m1m1[qb2plus_ind+1]<<std::endl; 
  
-
+    */
     int total_size = size1 + size2; 
     Eigen::MatrixXcd B_mat1(total_size, total_size); 
     Eigen::MatrixXcd B_mat2(total_size, total_size); 
 
+    
     test_Bmat_2plus1_system_ERE( B_mat1, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, r0_1, a0_2, r0_2 );
     
     //test_Bmat_GMtilde_multiplied_2plus1_system_ERE(B_mat2, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, a0_2); 
@@ -2382,7 +2384,12 @@ void plot_single_integral_equation_components()
     std::cout<<"rhophib = "<<rhophib_11<<std::endl;
     std::cout<<"delrho = "<<diff<<std::endl;
 
-    
+    //Changed multiple things, commented several
+    //check the whole code, when we set a>0, and 
+    //eta = 1, we get something closer to previous 
+    //results
+    //check with old code if they generate the same
+    //numbers or not
     
    
 
