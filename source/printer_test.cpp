@@ -2013,8 +2013,8 @@ void plot_single_integral_equation_components()
 
     
 
-    double number_of_points = 500.0; 
-    double number_of_points_1 = 500.0; 
+    double number_of_points = 10.0; 
+    double number_of_points_1 = 10.0; 
 
     comp sigb1plus = sigma_b_plus(a0_1, m1, m2);
     comp sigb1minus = sigma_b_minus(a0_1, m1, m2); 
@@ -2049,7 +2049,8 @@ void plot_single_integral_equation_components()
     comp En_final = threeparticle_threshold; 
     comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
     comp En_2 = En_initial; 
-    comp En = (En_1 + En_2)/2.0; 
+    comp En = std::sqrt(8.2);//(En_1 + En_2)/2.0; 
+    
 
     
 
@@ -2077,22 +2078,29 @@ void plot_single_integral_equation_components()
     std::vector<comp> weights_for_kvec_for_m1m1; 
 
     double eta_for_eps = 25.0; 
-    double eps_for_m2k = energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
+    double eps_for_m2k = 0.0;//energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
     double eps_for_ope = eps_for_m2k; 
     double eps_for_cutoff = 0.0; 
 
-    double eta_1 = 0.5; 
+    double eta_1 = 1.0;//0.5; 
     double eta_2 = 1.0; 
 
     flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
     flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points_1);
 
+    /*
     std::cout<<"pvec for m1m2 = "<<std::endl; 
     vec_printer(pvec_for_m1m2); 
     std::cout<<"kvec for m1m1 = "<<std::endl; 
     vec_printer(kvec_for_m1m1); 
     std::cout<<"=============================="<<std::endl;
+    */
 
+    for(int i=0; i<pvec_for_m1m2.size(); ++i)
+    {
+        std::cout<<"p="<<pvec_for_m1m2[i]<<'\t'
+                 <<"w="<<weights_for_pvec_for_m1m2[i]<<std::endl;
+    }
     
     int size1 = pvec_for_m1m2.size(); 
     int size2 = kvec_for_m1m1.size(); 
@@ -2153,6 +2161,16 @@ void plot_single_integral_equation_components()
 
     std::cout<<"Bmat1 determinant = "<<B_mat1.determinant()<<std::endl;
     //std::cout<<"Bmat2 determinant = "<<B_mat2.determinant()<<std::endl; 
+    std::cout<<"Bmat1 = "<<std::endl; 
+    for(int i=0; i<size1; ++i)
+    {
+        for(int j=0; j<size1; ++j)
+        {
+            std::cout<<i<<'\t'
+                     <<j<<'\t'
+                     <<B_mat1(i,j)<<std::endl; 
+        }
+    }
 
     //Print and compare the two Bmats we have
     char bmat_compare = 'n'; 
@@ -2371,7 +2389,7 @@ void plot_single_integral_equation_components()
     }
 
     comp dmat11_qq_val = dmat(qb1plus_ind, 0); 
-    comp g1_val = gfunc_i(eta_1, sigb1plus, m1, m2); 
+    comp g1_val = gfunc_i(eta_2, sigb1plus, m1, m2); 
     comp mphib_11_test_val = g1_val*g1_val*dmat11_qq_val; 
 
     comp rhophib_11 = rhophib(qb_val1plus, En); 
