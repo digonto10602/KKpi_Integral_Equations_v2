@@ -2013,8 +2013,8 @@ void plot_single_integral_equation_components()
 
     
 
-    double number_of_points = 10.0; 
-    double number_of_points_1 = 10.0; 
+    double number_of_points = 1000.0; 
+    double number_of_points_1 = 1000.0; 
 
     comp sigb1plus = sigma_b_plus(a0_1, m1, m2);
     comp sigb1minus = sigma_b_minus(a0_1, m1, m2); 
@@ -2078,11 +2078,12 @@ void plot_single_integral_equation_components()
     std::vector<comp> weights_for_kvec_for_m1m1; 
 
     double eta_for_eps = 25.0; 
-    double eps_for_m2k = 0.0;//energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
+    double eps_for_m2k = energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
+    std::cout<<"eps_for_m2k = "<<eps_for_m2k<<std::endl; 
     double eps_for_ope = eps_for_m2k; 
     double eps_for_cutoff = 0.0; 
 
-    double eta_1 = 1.0;//0.5; 
+    double eta_1 = 0.5; 
     double eta_2 = 1.0; 
 
     flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
@@ -2300,7 +2301,7 @@ void plot_single_integral_equation_components()
     negative_GSpqb_mat(negGSpqb, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, qb_val1plus, m1, m2, eps_for_ope, eps_for_cutoff, total_P); 
 
 
-    char gmat_plot = 'n';
+    char gmat_plot = 'y';
     if(gmat_plot=='y')
     {
 
@@ -2312,6 +2313,8 @@ void plot_single_integral_equation_components()
 
         int gmat_row = negGSpqb.rows(); 
         int gmat_col = negGSpqb.cols(); 
+
+        std::cout<<"gmat = "<<std::endl; 
         for(int i=0; i<gmat_row; ++i)
         {
             for(int j=0; j<gmat_col; ++j)
@@ -2320,7 +2323,7 @@ void plot_single_integral_equation_components()
                 {
                     std::cout<<i<<'\t'
                              <<j<<'\t'
-                            <<negGSpqb(i,j)<<'\t';
+                             <<negGSpqb(i,j)<<'\t';
                     fout3<<i<<'\t'
                          <<negGSpqb(i,j).real()<<'\t'
                          <<negGSpqb(i,j).imag()<<'\t';
@@ -2388,6 +2391,57 @@ void plot_single_integral_equation_components()
         fout4.close(); 
     }
 
+    /* Build constituents for degenerate case from 
+    the 2+1 system, solve the eqn to check results */
+
+    char degen_test = 'y';
+
+    if(degen_test=='y')
+    {
+        Eigen::MatrixXcd degen_Bmat(size1, size1); 
+        Eigen::VectorXcd degen_Gvec(size1); 
+        Eigen::VectorXcd degen_dvec(size1); 
+
+        for(int i=0; i<size1; ++i)
+        {
+            for(int j=0; j<size1; ++j)
+            {
+                degen_Bmat(i,j) = B_mat1(i,j); 
+            }
+        }
+
+        for(int i=0; i<size1; ++i)
+        {
+            degen_Gvec(i) = negGSpqb(i,0);
+        }
+
+        LinearSolver_3(degen_Bmat, degen_dvec, degen_Gvec, relerr);
+
+        std::cout<<"degen dvec = "<<std::endl; 
+
+        for(int i=0; i<size1; ++i)
+        {
+            std::cout<<i<<'\t'<<degen_dvec(i)<<std::endl; 
+        }
+
+        comp degen_dqq = {0.0,0.0}; 
+        test_degen_dqq_interpolator(degen_dvec, En, m1, pvec_for_m1m2, weights_for_pvec_for_m1m2, qb_val1plus, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, number_of_points, degen_dqq);
+
+        comp gval = gfunc_i(eta_1, sigb1plus, m1, m1); 
+        comp gsq = gval*gval; 
+        comp mphib = gsq*degen_dqq; 
+        comp rhopb = rhophib(qb_val1plus, En); 
+
+        double error = std::abs(((1.0/mphib).imag() + rhopb)/rhopb )*100.0; 
+
+        std::cout<<"g = "<<gval<<std::endl; 
+        std::cout<<"Im(1/mphib) = "<<(1.0/mphib).imag()<<std::endl; 
+        std::cout<<"rho phib = "<<rhopb<<std::endl; 
+        std::cout<<"error = "<<error<<std::endl; 
+    }
+    /*---------------------------------------------*/
+
+    
     comp dmat11_qq_val = dmat(qb1plus_ind, 0); 
     comp g1_val = gfunc_i(eta_2, sigb1plus, m1, m2); 
     comp mphib_11_test_val = g1_val*g1_val*dmat11_qq_val; 
@@ -2401,6 +2455,7 @@ void plot_single_integral_equation_components()
     std::cout<<"Im(1/mphib) = "<<(1.0/mphib_11_test_val).imag()<<std::endl;
     std::cout<<"rhophib = "<<rhophib_11<<std::endl;
     std::cout<<"delrho = "<<diff<<std::endl;
+    
 
     //Changed multiple things, commented several
     //check the whole code, when we set a>0, and 
