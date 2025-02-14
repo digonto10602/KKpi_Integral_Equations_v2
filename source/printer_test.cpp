@@ -652,7 +652,7 @@ void test_dpqb_vs_N_building()
     fout.close(); 
 }
 
-
+//This is not used anymore
 //Energy is set to be at one fourth range between 
 //phib threshold and three particle threshold 
 void test_dpqb_vs_N_building_1()
@@ -2001,7 +2001,7 @@ void compare_Bmats()
 void plot_single_integral_equation_components()
 {
     double m1 = 1.0; 
-    double m2 = 1.0; 
+    double m2 = 0.9; 
 
     double a0_1 = 2.0; 
     double a0_2 = 2.0; 
@@ -2083,8 +2083,8 @@ void plot_single_integral_equation_components()
     double eps_for_ope = eps_for_m2k; 
     double eps_for_cutoff = 0.0; 
 
-    double eta_1 = 0.5; 
-    double eta_2 = 1.0; 
+    double eta_1 = 1.0; 
+    double eta_2 = 0.5; 
 
     flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
     flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points_1);
@@ -2155,14 +2155,15 @@ void plot_single_integral_equation_components()
     Eigen::MatrixXcd B_mat2(total_size, total_size); 
 
     
-    test_Bmat_2plus1_system_ERE( B_mat1, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, r0_1, a0_2, r0_2 );
+    //test_Bmat_2plus1_system_ERE( B_mat1, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, r0_1, a0_2, r0_2 );
+    test_Bmat_2plus1_system_ERE_1( B_mat1, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, r0_1, eta_1, a0_2, r0_2, eta_2 );
     
     //test_Bmat_GMtilde_multiplied_2plus1_system_ERE(B_mat2, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, a0_2); 
     
 
     std::cout<<"Bmat1 determinant = "<<B_mat1.determinant()<<std::endl;
     //std::cout<<"Bmat2 determinant = "<<B_mat2.determinant()<<std::endl; 
-    std::cout<<"Bmat1 = "<<std::endl; 
+    /*std::cout<<"Bmat1 = "<<std::endl; 
     for(int i=0; i<size1; ++i)
     {
         for(int j=0; j<size1; ++j)
@@ -2171,7 +2172,7 @@ void plot_single_integral_equation_components()
                      <<j<<'\t'
                      <<B_mat1(i,j)<<std::endl; 
         }
-    }
+    }*/
 
     //Print and compare the two Bmats we have
     char bmat_compare = 'n'; 
@@ -2301,7 +2302,7 @@ void plot_single_integral_equation_components()
     negative_GSpqb_mat(negGSpqb, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, qb_val1plus, m1, m2, eps_for_ope, eps_for_cutoff, total_P); 
 
 
-    char gmat_plot = 'y';
+    char gmat_plot = 'n';
     if(gmat_plot=='y')
     {
 
@@ -2353,7 +2354,7 @@ void plot_single_integral_equation_components()
     //against the index values of the matrix
     //to check for any arbitrary singularities 
     //arising in the system. 
-    char dmat_plot = 'y';
+    char dmat_plot = 'n';
     if(dmat_plot=='y')
     {
 
@@ -2394,7 +2395,7 @@ void plot_single_integral_equation_components()
     /* Build constituents for degenerate case from 
     the 2+1 system, solve the eqn to check results */
 
-    char degen_test = 'y';
+    char degen_test = 'n';
 
     if(degen_test=='y')
     {
@@ -2443,20 +2444,36 @@ void plot_single_integral_equation_components()
 
     
     comp dmat11_qq_val = dmat(qb1plus_ind, 0); 
-    comp g1_val = gfunc_i(eta_2, sigb1plus, m1, m2); 
+    comp g1_val = gfunc_i(eta_1, sigb1plus, m1, m2); 
     comp mphib_11_test_val = g1_val*g1_val*dmat11_qq_val; 
 
     comp rhophib_11 = rhophib(qb_val1plus, En); 
 
-    double diff = std::abs(((1.0/mphib_11_test_val).imag() + rhophib_11)/rhophib_11*100.0);
+    double diff = std::abs(((1.0/mphib_11_test_val).imag() + rhophib_11)/rhophib_11)*100.0;
     
     std::cout<<"g = "<<g1_val<<std::endl; 
     std::cout<<"mphib = "<<mphib_11_test_val<<std::endl; 
     std::cout<<"Im(1/mphib) = "<<(1.0/mphib_11_test_val).imag()<<std::endl;
     std::cout<<"rhophib = "<<rhophib_11<<std::endl;
-    std::cout<<"delrho = "<<diff<<std::endl;
+    std::cout<<"delrho = "<<diff<<"%"<<std::endl;
     
+    Eigen::MatrixXcd dmat_qq_intpltd;
+    test_dqq_interpolator_1(dmat_qq_intpltd, dmat, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_val1plus, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_1, 0.0, eta_1, a0_2, 0.0, eta_2, number_of_points, 'n');
 
+    comp dmat11_qq_val_intpltd = dmat_qq_intpltd(0,0); 
+
+    g1_val = gfunc_i(eta_1, sigb1plus, m1, m2); 
+    mphib_11_test_val = g1_val*g1_val*dmat11_qq_val_intpltd; 
+
+    diff = std::abs(((1.0/mphib_11_test_val).imag() + rhophib_11)/rhophib_11)*100.0;
+    
+    std::cout<<"p - q = "<<pvec_for_m1m2[qb1plus_ind] - qb_val1plus<<std::endl; 
+    std::cout<<"g = "<<g1_val<<std::endl; 
+    std::cout<<"mphib = "<<mphib_11_test_val<<std::endl; 
+    std::cout<<"Im(1/mphib) = "<<(1.0/mphib_11_test_val).imag()<<std::endl;
+    std::cout<<"rhophib = "<<rhophib_11<<std::endl;
+    std::cout<<"delrho = "<<diff<<"%"<<std::endl;
+    
     //Changed multiple things, commented several
     //check the whole code, when we set a>0, and 
     //eta = 1, we get something closer to previous 
@@ -2466,6 +2483,150 @@ void plot_single_integral_equation_components()
     
    
 
+}
+
+void test_dpqb_vs_N_building_2()
+{
+    double m1 = 1.0;
+    double m2 = 0.9;//0.99999999990;//0.999; 
+    double a0_1 = 2.0; 
+    double a0_2 = 2.0; 
+    double r0_1 = 0.0; 
+    double r0_2 = 0.0; 
+    double eta_1 = 1.0; 
+    double eta_2 = 0.5; 
+
+    //double En = 1.95;
+    double total_P = 0.0; 
+    double r = 0; 
+    //int number_of_points = 250;  
+
+    
+
+    /*-----------------------------------------*/
+
+    comp sigb1plus = sigma_b_plus(a0_1, m1, m2);
+    comp sigb1minus = sigma_b_minus(a0_1, m1, m2); 
+    comp sigb2plus = sigma_b_plus(a0_2, m1, m1); 
+    comp sigb2minus = sigma_b_minus(a0_2, m1, m1); 
+    comp phib1plus = std::sqrt(sigb1plus) + m1;
+    comp phib1minus = std::sqrt(sigb1minus) + m1;
+    comp phib2plus = std::sqrt(sigb2plus) + m2;
+    comp phib2minus = std::sqrt(sigb2minus) + m2;
+
+
+    std::cout<<"sigb1+ = "<<sigb1plus<<std::endl; 
+    std::cout<<"sigb1- = "<<sigb1minus<<std::endl; 
+    
+    std::cout<<"sigb2+ = "<<sigb2plus<<std::endl; 
+    std::cout<<"sigb2- = "<<sigb2minus<<std::endl; 
+
+    std::cout<<"phib+ threshold 1 = "<<phib1plus<<std::endl; 
+    std::cout<<"phib- threshold 1 = "<<phib1minus<<std::endl; 
+    std::cout<<"phib+ threshold 2 = "<<phib2plus<<std::endl; 
+    std::cout<<"phib- threshold 2 = "<<phib2minus<<std::endl; 
+
+    comp threeparticle_threshold = (m1 + m1 + m2); 
+
+    //comp En = (phib1 + threeparticle_threshold)/2.0;
+
+    std::cout<<"threeparticle threshold = "<<threeparticle_threshold<<std::endl; 
+
+    
+    //abort();
+
+    
+    /* Generating a file here to check */
+    std::ofstream fout;
+    std::string filename =  "mphib_above_phibthreshold_a" + std::to_string((int)a0_1) + "_vs_N_En_after_component_check.dat";
+
+    fout.open(filename.c_str()); 
+
+    comp En_initial = phib1plus; 
+    comp En_final = threeparticle_threshold; 
+    comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
+    comp En_2 = En_initial; 
+    comp s = 8.2; 
+    comp En = std::sqrt(s);//(En_1 + En_2)/2.0; 
+
+    //qb vals for i=1 and i=2 case:
+    comp qb_val1plus = qb_i(En, sigb1plus, m1);
+    comp qb_val1minus = qb_i(En, sigb1minus, m1);
+    comp qb_val2plus = qb_i(En, sigb2plus, m2);
+    comp qb_val2minus = qb_i(En, sigb2minus, m2);
+
+    comp kmax_for_m1 = pmom(En, 0.0, m1); 
+    comp kmax_for_m2 = pmom(En, 0.0, m2); 
+    comp epsilon_for_kvec = 1.0e-5; 
+
+    std::cout<<"kmax_for_m1 = "<<kmax_for_m1<<std::endl; 
+    std::cout<<"kmax_for_m2 = "<<kmax_for_m2<<std::endl; 
+
+    double eta_for_eps = 25; 
+
+    double eps_for_m2k_1 = 0.0;// = energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
+    double eps_for_m2k_2 = 0.0; 
+    double eps_for_ope_1 = eps_for_m2k_1; 
+    double eps_for_ope_2 = eps_for_m2k_2; 
+    double eps_for_cutoff_1 = 0.0; 
+    double eps_for_cutoff_2 = 0.0; 
+
+    double En_points = 3000.0; 
+    comp delEn = std::abs(En_initial - En_final)/En_points; 
+
+    //N range = [50, 500] and [500, 5000]
+    int N_initial = 50; 
+    int N_final = 2000; 
+    int N_points = 0; 
+    int del_N = 50;//std::abs(N_initial - N_final)/N_points; 
+    N_points = std::abs((N_initial - N_final)/del_N);
+
+    for(int i=0; i<(int)N_points; ++i)
+    {
+        //comp En = En_initial + ((comp)i)*delEn; 
+        //comp qb; 
+        int number_of_points = N_initial + i*del_N; 
+        Eigen::MatrixXcd dpqbmat; 
+        Eigen::MatrixXcd dqqmat; 
+        std::vector<comp> pvec_for_m1m2; 
+        std::vector<comp> weights_for_pvec_for_m1m2; 
+        std::vector<comp> kvec_for_m1m1; 
+        std::vector<comp> weights_for_kvec_for_m1m1; 
+
+        double eta = 25; 
+
+        comp qb = qb_i(En, sigb1plus, m1);
+        comp kmax = pmom(En, 0.0, m1); 
+
+        eps_for_m2k_1 = energy_dependent_epsilon(eta, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points);
+        eps_for_m2k_2 = energy_dependent_epsilon(eta, En, qb_val2plus, sigb2plus, kmax_for_m2, m2, number_of_points);
+        eps_for_ope_1 = eps_for_m2k_1; 
+        eps_for_ope_2 = eps_for_m2k_2; 
+        test_dpqb_solver_ERE_2(dpqbmat, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb, eps_for_m2k_1, eps_for_m2k_2, eps_for_ope_1, eps_for_ope_2, eps_for_cutoff_1, eps_for_cutoff_2, total_P, a0_1, r0_1, eta_1, a0_2, r0_2, eta_2, number_of_points, 'n'); 
+        test_dqq_interpolator_2(dqqmat, dpqbmat, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb, eps_for_m2k_1, eps_for_m2k_2, eps_for_ope_1, eps_for_ope_2, eps_for_cutoff_1, eps_for_cutoff_2, total_P, a0_1, r0_1, eta_1, a0_2, r0_2, eta_2, number_of_points, 'n');
+
+        /*for(int i=0; i<pvec_for_m1m2.size(); ++i)
+        {
+            std::cout<<"pvec i="<<i<<'\t'<<"val = "<<pvec_for_m1m2[i]<<std::endl;
+        }*/
+
+        comp dqq11 = dqqmat(0,0); 
+        
+        //double eta_1 = 1.0; 
+        comp gval = gfunc_i(eta_1, sigb1plus, m1, m2);//gfunc(sigb1plus,a0_1);
+
+        comp mphib = gval*gval*dqq11; 
+        comp rhophib_mphib = rhophib(qb, En)*mphib; 
+        comp rhophib_val = rhophib(qb, En); 
+
+        double diff = (double)std::abs((std::imag(1.0/mphib) + std::real(rhophib_val))/(std::real(rhophib_val)))*100;
+        
+        std::cout<<std::setprecision(20)<<En.real()<<'\t'<<(En*En).real()<<'\t'<<rhophib_mphib.real()<<'\t'<<rhophib_mphib.imag()<<'\t'<<diff<<'\t'<<number_of_points<<std::endl; 
+        fout<<std::setprecision(20)<<std::real(En)<<'\t'<<std::real(En*En)<<'\t'<<rhophib_mphib.real()<<'\t'<<rhophib_mphib.imag()<<'\t'<<diff<<'\t'<<number_of_points<<std::endl; 
+        
+    
+    }
+    fout.close(); 
 }
 
 
@@ -2496,6 +2657,8 @@ int main()
     //compare_pcuts();
     
     //compare_Bmats(); 
-    plot_single_integral_equation_components();
+    //plot_single_integral_equation_components();
+    test_dpqb_vs_N_building_2();
+    
     return 0;
 }
