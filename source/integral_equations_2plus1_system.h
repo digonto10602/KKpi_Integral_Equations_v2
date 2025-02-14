@@ -216,6 +216,11 @@ void test_kernel_2plus1_system_ERE(  Eigen::MatrixXcd &kern_mat,
     char debug = 'n';
     comp ii = {0.0,1.0};
     comp pi = std::acos(-1.0); 
+
+    //this is the symmetrization factor
+    //we need to comment this later on 
+    double eta_1 = 0.5; 
+    double eta_2 = 0.5; 
     //double r = 0.0;//setting effective range to 0 for both M2k
 
     int size_for_M2_1 = pvec_for_m1m2.size(); 
@@ -254,7 +259,8 @@ void test_kernel_2plus1_system_ERE(  Eigen::MatrixXcd &kern_mat,
     {
         comp mom_p = pvec_for_m1m2[i];
 
-        comp M2k = M2k_tilde_ERE(E, mom_p, total_P, a0_m1, r0_m1, mi, mj, mk, eps_for_m2k);
+        //comp M2k = M2k_tilde_ERE(E, mom_p, total_P, a0_m1, r0_m1, mi, mj, mk, eps_for_m2k);
+        comp M2k = M2k_ERE(eta_1, E, mom_p, total_P, a0_m1, r0_m1, mi, mj, mk, eps_for_m2k);
 
         M2k_for_m1m2(i,i) = M2k; 
     }
@@ -270,7 +276,8 @@ void test_kernel_2plus1_system_ERE(  Eigen::MatrixXcd &kern_mat,
     {
         comp mom_k = kvec_for_m1m1[i];
 
-        comp M2k = M2k_tilde_ERE(E, mom_k, total_P, a0_m2, r0_m2, mi, mj, mk, eps_for_m2k);
+        //comp M2k = M2k_tilde_ERE(E, mom_k, total_P, a0_m2, r0_m2, mi, mj, mk, eps_for_m2k);
+        comp M2k = M2k_ERE(eta_2, E, mom_k, total_P, a0_m2, r0_m2, mi, mj, mk, eps_for_m2k);
 
         M2k_for_m1m1(i,i) = M2k; 
     }
@@ -279,9 +286,14 @@ void test_kernel_2plus1_system_ERE(  Eigen::MatrixXcd &kern_mat,
 
     Eigen::MatrixXcd M2k_mat(size_for_M2_1 + size_for_M2_2, size_for_M2_1 + size_for_M2_2);
 
+    /*
     M2k_mat <<  M2k_for_m1m2, Filler0_12,
                 Filler0_21, M2k_for_m1m1;
+    */
 
+    M2k_mat <<  M2k_for_m1m2, Filler0_12,
+                Filler0_21, 0.5*M2k_for_m1m1;
+    
     if(debug=='y')
     {
         std::cout<<"===========M2MAT============="<<std::endl; 

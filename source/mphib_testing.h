@@ -825,6 +825,43 @@ void test_dqq_interpolator(  Eigen::MatrixXcd &result_dqbqb_mat,
 
 }
 
+void test_degen_dqq_interpolator(   Eigen::VectorXcd &dpqb_vec, 
+                                    comp En, 
+                                    double m, 
+                                    std::vector<comp> &qvec, 
+                                    std::vector<comp> &weights, 
+                                    comp qb, 
+                                    double eps_for_m2k,
+                                    double eps_for_ope, 
+                                    double eps_for_cutoff, 
+                                    comp total_P, 
+                                    double a, 
+                                    int number_of_points, 
+                                    comp &result )
+{
+    comp ii = {0.0, 1.0}; 
+    comp pi = std::acos(-1.0); 
+
+    int size = qvec.size(); 
+    comp Gqq = GS_pk(En, qb, qb, m, m, m, eps_for_ope, eps_for_cutoff); 
+
+    comp tot = {0.0,0.0}; 
+
+    for(int i=0; i<size; ++i)
+    {
+        comp kval = qvec[i]; 
+        comp omgk = omega_func(kval, m); 
+        comp wt = weights[i]; 
+        comp phspace = wt*kval*kval/((2.0*pi)*(2.0*pi)*omgk);
+        comp Gpq = GS_pk(En, qb, kval, m, m, m, eps_for_ope, eps_for_cutoff);
+        comp Mq = M2k_ERE(0.5, En, kval, total_P, a, 0.0, m, m, m, eps_for_m2k);
+        comp dpq = dpqb_vec(i); 
+
+        tot = tot + phspace*Gpq*Mq*dpq; 
+    }
+
+    result = - Gqq - tot; 
+}
 
 void Mphib_degenerate_mass( comp En, 
                             double m,
