@@ -419,6 +419,45 @@ comp M2k_ERE_large_sigk_approx( double eta_i,
     return real_part + ii*imag_part; 
 }
 
+//epsilon dependent delta function
+comp delta_function_eps(    double eps,
+                            comp sigk, 
+                            comp sigb   )
+{
+    double pi = std::acos(-1.0); 
+    comp num = eps; 
+    comp denom = pi*((sigk - sigb)*(sigk - sigb) + eps*eps);
+
+    return num/denom; 
+}
+
+//delta_M2 = M2 + delta_function
+comp delta_M2k_ERE( double eta_i, 
+                    comp En, 
+                    comp k, //spectator momentum
+                    comp total_P, 
+                    comp sigb, //bound-state pole location 
+                    double a, //This is the scattering length
+                    double r, //This is the effective range 
+                    double mi, //mass of the spectator  
+                    double mj, 
+                    double mk, 
+                    double eps )
+{
+    double pi = std::acos(-1.0); 
+    comp ii = {0.0, 1.0}; 
+
+    comp sigk = sigma(En, k, mi, total_P); 
+    comp M2 = M2k_ERE(eta_i, En, k, total_P, a, r, mi, mj, mk, eps); 
+    comp g = gfunc_i(eta_i, sigb, mj, mk); 
+    comp delta_func = ii*pi*g*g*delta_function_eps(eps, sigk, sigb);
+
+    comp delta_M2 = M2 - delta_func; 
+
+    return delta_M2; 
+}
+
+
 
 #endif 
 

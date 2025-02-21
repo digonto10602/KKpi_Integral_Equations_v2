@@ -901,6 +901,7 @@ void test_dpqb_solver_ERE_2(   Eigen::MatrixXcd &dmatpqb,
 
     //std::cout<<"here"<<std::endl; 
     //std::cout<<mat_width<<std::endl; 
+    //#pragma omp critical 
     //cusolverComplex_mat(B_mat, negG_mat, d_mat, mat_length, mat_width); 
 
     if(debug=='y')
@@ -1815,7 +1816,7 @@ void Mphib_degenerate_mass( comp En,
 }
 
 /*  SA Method */
-comp delta_epsilon( comp sigk, 
+comp delta_epsilon_notused_anymore( comp sigk, 
                     comp sigb, 
                     double eps_for_m2k  )
 {
