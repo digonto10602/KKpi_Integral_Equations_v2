@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include "integral_equations_2plus1_system.h"
 #include "mphib_testing.h"
+#include "SA_method_2plus1_system.h"
 
 #define PRINT_PARAM(x) std::cout<<#x<<" = "<<x<<std::endl; 
 
@@ -2887,7 +2888,7 @@ void test_delta_rhophib_density_with_omp()
     //N range = [50, 500] and [500, 5000]
     int N_initial = 10; 
     int N_final = 1010; 
-    int N_points = 100; 
+    int N_points = 500; 
     int del_N = std::abs(N_initial - N_final)/N_points; 
     //N_points = std::abs((N_initial - N_final)/del_N);
 
@@ -2898,7 +2899,7 @@ void test_delta_rhophib_density_with_omp()
 
     double log_eps_initial = log(pow(10,-4.0));
     double log_eps_final = log(pow(10,-1.0)); 
-    double log_eps_points = 100.0; 
+    double log_eps_points = 500.0; 
     double del_log_eps = std::abs(log_eps_initial - log_eps_final)/log_eps_points; 
 
 
@@ -2920,7 +2921,7 @@ void test_delta_rhophib_density_with_omp()
         }
     }
     //abort(); 
-    std::string filename =  "delta_rhophib_density.dat";
+    std::string filename =  "delta_rhophib_density_hardcutoff.dat";
     fout.open(filename.c_str()); 
 
     //std::vector<std::vector<comp> > 
@@ -2930,6 +2931,26 @@ void test_delta_rhophib_density_with_omp()
     std::vector<double> diff_vec(run_size); 
     int run_counter = 0; 
     int run_counter2 = 1; 
+
+    /*-------------Input for Python plot script ---------*/
+    /*the plot script will use this input to draw individual epsilon
+    lines based on single eta values on the density plot */
+    std::ofstream fout1; 
+    std::string filename1 = "eta_epsilon_input_for_" + filename; 
+    fout1.open(filename1.c_str()); 
+
+    fout1<<"En"<<'\t'
+         <<"qb"<<'\t'
+         <<"sigb"<<'\t'
+         <<"kmax"<<'\t'
+         <<"mi"<<std::endl; 
+    fout1<<En.real()<<'\t'
+         <<qb_val1plus.real()<<'\t'
+         <<sigb1plus.real()<<'\t'
+         <<kmax_for_m1.real()<<'\t'
+         <<m1<<std::endl; 
+    fout1.close();
+    /*----------------------------------------------------*/
 
     #pragma omp parallel for schedule(dynamic)
     for(ind=0; ind<(int)run_size; ++ind)
@@ -2984,8 +3005,8 @@ void test_delta_rhophib_density_with_omp()
             std::cout<<"ex: N = "<<number_of_points<<'\t'
                      <<"eps = "<<eps<<'\t'
                      <<"diff = "<<diff<<'\t'
-                     <<"run_no = "<<run_counter<<'\t'
-                     <<"10% run_size = "<<run_size/10<<std::endl; 
+                     <<"run_no = "<<run_counter
+                     <<"/"<<run_size<<std::endl; 
         }
         run_counter = run_counter + 1; 
         run_counter2 = run_counter2 + 1; 
@@ -3005,7 +3026,139 @@ void test_delta_rhophib_density_with_omp()
     fout.close(); 
 }
 
+void test_SA_method_1()
+{
+    double m1 = 1.0;
+    double m2 = 0.9;//0.99999999990;//0.999; 
+    double a0_m1 = 2.0; 
+    double a0_m2 = 2.0; 
+    double r0_m1 = 0.0; 
+    double r0_m2 = 0.0; 
+    double eta_1 = 1.0; 
+    double eta_2 = 0.5; 
 
+    //double En = 1.95;
+    double total_P = 0.0; 
+    double r = 0; 
+    int number_of_points = 5000;  
+
+    
+
+    /*-----------------------------------------*/
+
+    comp sigb1plus = sigma_b_plus(a0_m1, m1, m2);
+    comp sigb1minus = sigma_b_minus(a0_m1, m1, m2); 
+    comp sigb2plus = sigma_b_plus(a0_m2, m1, m1); 
+    comp sigb2minus = sigma_b_minus(a0_m2, m1, m1); 
+    comp phib1plus = std::sqrt(sigb1plus) + m1;
+    comp phib1minus = std::sqrt(sigb1minus) + m1;
+    comp phib2plus = std::sqrt(sigb2plus) + m2;
+    comp phib2minus = std::sqrt(sigb2minus) + m2;
+
+
+    std::cout<<"sigb1+ = "<<sigb1plus<<std::endl; 
+    std::cout<<"sigb1- = "<<sigb1minus<<std::endl; 
+    
+    std::cout<<"sigb2+ = "<<sigb2plus<<std::endl; 
+    std::cout<<"sigb2- = "<<sigb2minus<<std::endl; 
+
+    std::cout<<"phib+ threshold 1 = "<<phib1plus<<std::endl; 
+    std::cout<<"phib- threshold 1 = "<<phib1minus<<std::endl; 
+    std::cout<<"phib+ threshold 2 = "<<phib2plus<<std::endl; 
+    std::cout<<"phib- threshold 2 = "<<phib2minus<<std::endl; 
+
+    comp threeparticle_threshold = (m1 + m1 + m2); 
+
+    //comp En = (phib1 + threeparticle_threshold)/2.0;
+
+    std::cout<<"threeparticle threshold = "<<threeparticle_threshold<<std::endl; 
+
+    
+    //abort();
+
+    
+    /* Generating a file here to check */
+    std::ofstream fout;
+   
+
+    comp En_initial = phib1plus; 
+    comp En_final = threeparticle_threshold; 
+    comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
+    comp En_2 = En_initial; 
+    comp s = 8.2; 
+    comp En = std::sqrt(s);//(En_1 + En_2)/2.0; 
+
+    //qb vals for i=1 and i=2 case:
+    comp qb_val1plus = qb_i(En, sigb1plus, m1);
+    comp qb_val1minus = qb_i(En, sigb1minus, m1);
+    comp qb_val2plus = qb_i(En, sigb2plus, m2);
+    comp qb_val2minus = qb_i(En, sigb2minus, m2);
+
+    comp kmax_for_m1 = pmom(En, 0.0, m1); 
+    comp kmax_for_m2 = pmom(En, 0.0, m2); 
+    comp epsilon_for_kvec = 1.0e-5; 
+
+    std::cout<<"kmax_for_m1 = "<<kmax_for_m1<<std::endl; 
+    std::cout<<"kmax_for_m2 = "<<kmax_for_m2<<std::endl; 
+
+    double eta_for_eps = 25; 
+
+    double eps_for_m2k_1 = energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
+    double eps_for_m2k_2 = 0.0; 
+    double eps_for_ope_1 = eps_for_m2k_1; 
+    double eps_for_ope_2 = eps_for_m2k_2; 
+    double eps_for_cutoff_1 = 0.0; 
+    double eps_for_cutoff_2 = 0.0; 
+    double eps_for_m2k = eps_for_m2k_1; 
+    double eps_for_ope = eps_for_m2k; 
+    double eps_for_cutoff = 0.0; 
+    comp qb_1 = qb_val1plus; 
+    comp qb_2 = qb_1;//qb_val2plus; 
+    comp sigb1 = sigb1plus;
+    comp sigb2 = sigb2plus; 
+
+    double En_points = 3000.0; 
+    comp delEn = std::abs(En_initial - En_final)/En_points; 
+
+    //N range = [50, 500] and [500, 5000]
+    int N_initial = 50; 
+    int N_final = 2000; 
+    int N_points = 0; 
+    int del_N = 50;//std::abs(N_initial - N_final)/N_points; 
+    N_points = std::abs((N_initial - N_final)/del_N);
+
+    double eta_initial = 2.0; 
+    double eta_final = 50.0;
+    double eta_points = 1000.0; 
+    double del_eta = std::abs(eta_final - eta_initial)/eta_points;  
+
+
+    std::vector<comp> pvec_for_m1m2;
+    std::vector<comp> kvec_for_m1m1; 
+    std::vector<comp> weights_for_pvec_for_m1m2; 
+    std::vector<comp> weights_for_kvec_for_m1m1; 
+
+    flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
+    flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points);
+
+    char debug = 'n'; 
+    Eigen::MatrixXcd dqq_mat; 
+
+
+    test_dS_qbiqbi_SA_Method_2plus1_system_ERE(dqq_mat, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, sigb1, sigb2, qb_1, qb_2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, debug);
+
+    comp g1_val = gfunc_i(eta_1, sigb1plus, m1, m2); 
+    comp dqq_val = dqq_mat(0,0); 
+    comp mphib = g1_val*g1_val*dqq_val; 
+    comp rhophib_11 = rhophib(qb_val1plus, En); 
+    double diff = std::abs(((1.0/mphib).imag() + rhophib_11)/rhophib_11)*100.0; 
+
+    std::cout<<"Im(1/mphib) = "<<1.0/mphib<<std::endl; 
+    std::cout<<"rhophib = "<<rhophib_11<<std::endl; 
+    std::cout<<"diff = "<<diff<<std::endl; 
+
+
+}
 
 int main()
 {
@@ -3036,7 +3189,9 @@ int main()
     //plot_single_integral_equation_components();
     //test_dpqb_vs_N_building_2();
     //test_dpqb_vs_N_50_eta_dependence();
-    test_delta_rhophib_density_with_omp();
+    //test_delta_rhophib_density_with_omp();
     
+    //SA Method Testing:
+    test_SA_method_1(); 
     return 0;
 }
