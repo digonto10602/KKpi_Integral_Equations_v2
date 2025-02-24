@@ -100,5 +100,6 @@
         "print": "cpp",
         "queue": "cpp",
         "stack": "cpp"
-    }
+    },
+    "editor.suggest.showWords": false
 }
