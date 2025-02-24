@@ -1427,6 +1427,8 @@ void test_Gs()
     fout.close(); 
 }
 
+//These set works when we set k of (p,k) to qb
+//and find the singularities of p
 comp beta_x_j(  comp En, 
                 comp x, 
                 double mj, 
@@ -1482,6 +1484,64 @@ comp p_ope_cut_minus(   comp En,
     return num/denom; 
 }
 
+//Here we define the singularity cuts for the case
+//when we set p of (p,k) to qb and find the singularities 
+//based on k
+
+comp beta_x_i(  comp En, 
+                comp x, 
+                double mi, 
+                comp p  )
+{
+    comp omgp = omega_func(p, mi);
+    comp A = (En - omgp); 
+    comp B = x*p;
+
+    return A*A - B*B; 
+}
+
+comp r_ope_cut_plus(    comp En,
+                        comp x, 
+                        comp p, 
+                        double mi, 
+                        double mj, 
+                        double mk, 
+                        double eps )
+{
+    comp ii = {0.0, 1.0}; 
+    comp betax = beta_x_i(En, x, mi, p); 
+    comp beta0 = beta_x_i(En, 0.0, mi, p); 
+    comp beta1 = beta_x_i(En, 1.0, mi, p); 
+    comp A = beta1 + ii*eps; 
+    comp xi = A + (mj*mj - mk*mk);
+
+    comp num = -p*x*xi + std::sqrt(beta0)*std::sqrt(xi*xi - 4.0*mj*mj*betax);
+    comp denom = 2.0*betax; 
+
+    return num/denom; 
+}
+
+comp r_ope_cut_minus(   comp En,
+                        comp x, 
+                        comp p, 
+                        double mi, 
+                        double mj, 
+                        double mk, 
+                        double eps )
+{
+    comp ii = {0.0, 1.0}; 
+    comp betax = beta_x_i(En, x, mi, p); 
+    comp beta0 = beta_x_i(En, 0.0, mi, p); 
+    comp beta1 = beta_x_i(En, 1.0, mi, p); 
+    comp A = beta1 + ii*eps; 
+    comp xi = A + (mj*mj - mk*mk);
+
+    comp num = -p*x*xi - std::sqrt(beta0)*std::sqrt(xi*xi - 4.0*mj*mj*betax);
+    comp denom = 2.0*betax; 
+
+    return num/denom; 
+}
+
 void test_kernel_singularities()
 {
     comp ii = {0.0,1.0};
@@ -1490,7 +1550,7 @@ void test_kernel_singularities()
     double m1 = 1.0; 
     double m2 = 0.9;
 
-    comp En = std::sqrt(8.3); 
+    comp En = std::sqrt(8.2); 
 
     double a0_1 = 2.0; 
     double a0_2 = 2.0; 
@@ -1500,12 +1560,21 @@ void test_kernel_singularities()
     double eps_for_ope = 0.0; 
 
     comp sigb11 = sigma_b_plus(a0_1, m1, m2); 
-    comp sigb12 = sigma_b_minus(a0_1, m1, m2); 
-    comp sigb2 = sigma_b_plus(a0_1, m1, m1); 
+    comp sigb11_1 = sigma_b_minus(a0_1, m1, m2); 
+
+    comp sigb12 = sigma_b_plus(a0_1, m2, m1); 
+    comp sigb21 = sigma_b_plus(a0_2, m1, m1); 
+    comp sigb22 = sigma_b_minus(a0_2, m1, m1); 
+    //std::cout<<sigb11<<'\t'<<sigb11_1<<'\t'<<sigb12<<'\t'<<sigb21<<'\t'<<sigb22<<std::endl; 
+    //abort(); 
 
     comp qb11 = qb_i(En, sigb11, m1); 
     comp qb12 = qb_i(En, sigb12, m1); 
-    comp qb2 = qb_i(En, sigb2, m2); 
+    comp qb21 = qb_i(En, sigb21, m2); 
+
+    comp pole_for_M2_11 = qb_i(En, sigb11, m1); 
+    comp pole_for_M2_12 = qb_i(En, sigb11_1, m1); 
+    comp pole_for_M2_2 = qb_i(En, sigb21, m2); 
 
     double xinitial = -1.0; 
     double xfinal = 1.0; 
@@ -1531,24 +1600,28 @@ void test_kernel_singularities()
         comp pcutplus_qb11 = p_ope_cut_plus(En, x, qb11, mi, mj, mk, eps_for_ope);
         comp pcutminus_qb11 = p_ope_cut_minus(En, x, qb11, mi, mj, mk, eps_for_ope);
 
+        mi = m1; 
+        mj = m2; 
+        mk = m1; 
+
         comp pcutplus_qb12 = p_ope_cut_plus(En, x, qb12, mi, mj, mk, eps_for_ope);
         comp pcutminus_qb12 = p_ope_cut_minus(En, x, qb12, mi, mj, mk, eps_for_ope);
 
         mi = m2; 
         mj = m1; 
         mk = m1; 
-        comp pcutplus_qb2 = p_ope_cut_plus(En, x, qb2, mi, mj, mk, eps_for_ope);
-        comp pcutminus_qb2 = p_ope_cut_minus(En, x, qb2, mi, mj, mk, eps_for_ope);
+        comp pcutplus_qb21 = p_ope_cut_plus(En, x, qb21, mi, mj, mk, eps_for_ope);
+        comp pcutminus_qb21 = p_ope_cut_minus(En, x, qb21, mi, mj, mk, eps_for_ope);
 
         fout<<setprecision(20)
             <<En.real()<<'\t'
             <<En.imag()<<'\t'
-            <<qb11.real()<<'\t'
-            <<qb11.imag()<<'\t'
-            <<qb12.real()<<'\t'
-            <<qb12.imag()<<'\t'
-            <<qb2.real()<<'\t'
-            <<qb2.imag()<<'\t'
+            <<pole_for_M2_11.real()<<'\t'
+            <<pole_for_M2_11.imag()<<'\t'
+            <<pole_for_M2_12.real()<<'\t'
+            <<pole_for_M2_12.imag()<<'\t'
+            <<pole_for_M2_2.real()<<'\t'
+            <<pole_for_M2_2.imag()<<'\t'
             <<pcutplus_qb11.real()<<'\t'
             <<pcutplus_qb11.imag()<<'\t'
             <<pcutminus_qb11.real()<<'\t'
@@ -1557,21 +1630,21 @@ void test_kernel_singularities()
             <<pcutplus_qb12.imag()<<'\t'
             <<pcutminus_qb12.real()<<'\t'
             <<pcutminus_qb12.imag()<<'\t'
-            <<pcutplus_qb2.real()<<'\t'
-            <<pcutplus_qb2.imag()<<'\t'
-            <<pcutminus_qb2.real()<<'\t'
-            <<pcutminus_qb2.imag()<<std::endl;
+            <<pcutplus_qb21.real()<<'\t'
+            <<pcutplus_qb21.imag()<<'\t'
+            <<pcutminus_qb21.real()<<'\t'
+            <<pcutminus_qb21.imag()<<std::endl;
 
         std::cout<<En<<'\t'
                  <<qb11<<'\t'
                  <<qb12<<'\t'
-                 <<qb2<<'\t'
+                 <<qb21<<'\t'
                  <<pcutplus_qb11<<'\t'
                  <<pcutminus_qb11<<'\t'
                  <<pcutplus_qb12<<'\t'
                  <<pcutminus_qb12<<'\t'
-                 <<pcutplus_qb2<<'\t'
-                 <<pcutminus_qb2<<std::endl;
+                 <<pcutplus_qb21<<'\t'
+                 <<pcutminus_qb21<<std::endl;
 
 
     }
@@ -1586,6 +1659,7 @@ void test_kernel_singularities()
 /* We copied the old pcut plus for identical particles 
 to check the newly built one */
 
+/*
 comp omega_comp(    comp p,
                     double m    )
 {
@@ -1699,8 +1773,8 @@ comp pcut_plus_comp(     comp x,
     return (firstterm + secondterm*thirdterm)/forthterm;
 }
 
-
-
+*/
+/*
 void compare_pcuts()
 {
     comp ii = {0.0,1.0};
@@ -1756,7 +1830,7 @@ void compare_pcuts()
     std::cout<<pcutplus_qb11<<'\t'<<pcut_old<<std::endl; 
 
 }
-
+*/
 
 
 void test_Gs_surface()
@@ -1766,7 +1840,7 @@ void test_Gs_surface()
     double m1 = 1.0; 
     double m2 = 0.9; 
 
-    comp En = std::sqrt(8.3); 
+    comp En = std::sqrt(8.2); 
     double total_P = 0.0; 
 
     double delta = 1.0e-4; 
@@ -1777,9 +1851,11 @@ void test_Gs_surface()
     double eps_for_m2k = 0.0; 
 
     comp sigb1 = sigma_b_plus(a0_1, m1, m2);
+    comp sigb2 = sigma_b_plus(a0_2, m1, m1); 
 
 
     comp qb = qb_i(En, sigb1, m1);
+    comp qb2 = qb_i(En, sigb2, m2); 
 
     double sigp_initial = 3.3; 
     double sigp_final = 4.0; 
@@ -1796,8 +1872,8 @@ void test_Gs_surface()
     double del_pimag = std::abs(pimag_initial - pimag_final)/p_points;
 
     double mi, mj, mk; 
-    double eta_1 = 0.5; 
-    double eta_2 = 1.0; 
+    double eta_1 = 1.0; 
+    double eta_2 = 0.5; 
 
     std::string filename1 = "test_Gs_surface.dat";
     std::ofstream fout; 
@@ -1818,8 +1894,8 @@ void test_Gs_surface()
             mk = m2; 
             
             comp Gs11 = GS_pk(En, qb, p, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
-            comp M2k_11 = M2k_ERE(eta_1, En, p, total_P, a0_1, 0.0, mi, mj, mk, eps_for_m2k);
-            comp omg_11 = omega_func(p, mk);
+            comp M2k_11 = M2k_ERE(eta_1, En, p, total_P, a0_1, 0.0, mj, mk, mi, eps_for_m2k);
+            comp omg_11 = omega_func(p, mj);
 
             comp kern1 = (p*p/(std::pow(2.0*pi,2.0)*omg_11))*Gs11*M2k_11; 
 
@@ -1829,8 +1905,8 @@ void test_Gs_surface()
             mk = m1; 
             
             comp Gs12 = GS_pk(En, qb, p, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
-            comp M2k_12 = M2k_ERE(eta_2, En, p, total_P, a0_2, 0.0, mi, mj, mk, eps_for_m2k);
-            comp omg_12 = omega_func(p, mk);
+            comp M2k_12 = M2k_ERE(eta_2, En, p, total_P, a0_2, 0.0, mj, mk, mi, eps_for_m2k);
+            comp omg_12 = omega_func(p, mj);
 
             comp kern2 = (p*p/(std::pow(2.0*pi,2.0)*omg_12))*Gs12*M2k_12; 
 
@@ -1839,9 +1915,9 @@ void test_Gs_surface()
             mj = m1; 
             mk = m1; 
             
-            comp Gs21 = GS_pk(En, qb, p, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
-            comp M2k_21 = M2k_ERE(eta_1, En, p, total_P, a0_1, 0.0, mi, mj, mk, eps_for_m2k);
-            comp omg_21 = omega_func(p, mk);
+            comp Gs21 = GS_pk(En, qb2, p, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
+            comp M2k_21 = M2k_ERE(eta_1, En, p, total_P, a0_1, 0.0, mj, mk, mi, eps_for_m2k);
+            comp omg_21 = omega_func(p, mj);
 
             comp kern3 = (p*p/(std::pow(2.0*pi,2.0)*omg_21))*Gs21*M2k_21; 
 
@@ -1877,6 +1953,119 @@ void test_Gs_surface()
     }
     fout.close(); 
 }
+
+void test_Gs_surface_1()
+{
+    comp ii = {0.0, 1.0}; 
+    double pi = std::acos(-1.0); 
+    double m1 = 1.0; 
+    double m2 = 0.9; 
+
+    comp En = std::sqrt(8.2); 
+    double total_P = 0.0; 
+
+    double delta = 1.0e-4; 
+    double a0_1 = 2.0; 
+    double a0_2 = 2.0;
+    double eps_for_cutoff = 0.0; 
+    double eps_for_ope = 0.0; 
+    double eps_for_m2k = 0.0; 
+
+    comp sigb1 = sigma_b_plus(a0_1, m1, m2);
+    comp sigb2 = sigma_b_plus(a0_2, m1, m1); 
+
+
+    comp qb = qb_i(En, sigb1, m1);
+    comp qb2 = qb_i(En, sigb2, m2); 
+
+    double sigp_initial = 3.3; 
+    double sigp_final = 4.0; 
+    double sigp_points = 200000; 
+    double del_sigp = std::abs(sigp_initial - sigp_final)/sigp_points; 
+
+    double preal_initial = -0.5;//-1.5; 
+    double preal_final = 0.51;//1.51; 
+    double pimag_initial = -0.6;//-1.5; 
+    double pimag_final = -0.51;//1.51; 
+
+    double p_points = 253; 
+    double del_preal = std::abs(preal_initial - preal_final)/p_points; 
+    double del_pimag = std::abs(pimag_initial - pimag_final)/p_points;
+
+    double mi, mj, mk; 
+    double eta_1 = 1.0; 
+    double eta_2 = 0.5; 
+
+    std::string filename1 = "test_Gs_surface_1.dat";
+    std::ofstream fout; 
+    fout.open(filename1.c_str()); 
+
+    for(int i=0; i<p_points; ++i)
+    {
+        for(int j=0; j<p_points; ++j)
+        {
+            comp preal = preal_initial + (comp)i*del_preal; 
+            comp pimag = pimag_initial + (comp)j*del_pimag; 
+
+            comp p = preal + ii*pimag; 
+
+            //(i,j) = 2 1 ; k = 1
+            mi = m2; 
+            mj = m1; 
+            mk = m1; 
+            
+            comp Gs21 = GS_pk(En, qb2, p, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
+            comp M2k_21 = M2k_ERE(eta_1, En, p, total_P, a0_1, 0.0, mj, mk, mi, eps_for_m2k);
+            comp omg_21 = omega_func(p, mj);
+
+            comp kern3 = (p*p/(std::pow(2.0*pi,2.0)*omg_21))*Gs21*M2k_21; 
+
+
+            fout<<std::setprecision(20)
+                <<preal.real()<<'\t'
+                <<pimag.real()<<'\t'
+                <<kern3.real()<<'\t'
+                <<kern3.imag()<<std::endl; 
+
+            std::cout<<std::setprecision(20)
+                     <<preal<<'\t'
+                     <<pimag<<'\t'
+                     <<kern3.real()<<'\t'
+                     <<kern3.imag()<<std::endl; 
+
+        }
+         
+    }
+    fout.close(); 
+
+    std::ofstream fout1; 
+    std::string filename2 = "kernel_singularities_1.dat";
+    fout1.open(filename2.c_str()); 
+
+    double xinitial = -1.0; 
+    double xfinal = 1.0; 
+    double xpoints = 1000.0; 
+    double delx = std::abs(xinitial - xfinal)/xpoints;
+
+    for(int i=0; i<xpoints; ++i)
+    {
+        double x = xinitial + i*delx; 
+
+        mi = m2; 
+        mj = m1; 
+        mk = m1; 
+
+        comp pcutplus_val = r_ope_cut_plus(En, x, qb2, mi, mj, mk, eps_for_ope); 
+        comp pcutminus_val = r_ope_cut_minus(En, x, qb2, mi, mj, mk, eps_for_ope); 
+
+        fout1<<pcutplus_val.real()<<'\t'
+             <<pcutplus_val.imag()<<'\t'
+             <<pcutminus_val.real()<<'\t'
+             <<pcutminus_val.imag()<<std::endl; 
+    }
+    fout1.close(); 
+}
+
 
 void compare_Bmats()
 {
@@ -1978,7 +2167,7 @@ void compare_Bmats()
     std::cout<<"Bmat1 determinant = "<<B_mat1.determinant()<<std::endl;
     std::cout<<"Bmat2 determinant = "<<B_mat2.determinant()<<std::endl; 
 
-    /*for(int i=0; i<total_size; ++i)
+    for(int i=0; i<total_size; ++i)
     {
         for(int j=0; j<total_size; ++j)
         {
@@ -1994,10 +2183,12 @@ void compare_Bmats()
                      <<"Bmat2="<<B<<'\t'
                      <<"diff="<<diff<<std::endl; 
         }
-    }*/
+    }
 
 
 }
+
+
 
 void plot_single_integral_equation_components()
 {
@@ -3347,12 +3538,15 @@ int main()
     
     //compare_Bmats(); 
     //plot_single_integral_equation_components();
-    test_dpqb_vs_N_building_2();
+    //test_dpqb_vs_N_building_2();
     //test_dpqb_vs_N_50_eta_dependence();
     //test_delta_rhophib_density_with_omp();
     
     //SA Method Testing:
     //test_SA_method_1(); 
-    test_SA_method_vs_N();
+    //test_SA_method_vs_N();
+
+    //Going back to OPE again
+    test_Gs_surface_1();
     return 0;
 }
