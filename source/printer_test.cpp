@@ -1972,10 +1972,12 @@ void test_Gs_surface_1()
     double eps_for_m2k = 0.0; 
 
     comp sigb1 = sigma_b_plus(a0_1, m1, m2);
+    comp sigb1_deep = sigma_b_minus(a0_1, m1, m2); 
     comp sigb2 = sigma_b_plus(a0_2, m1, m1); 
 
 
-    comp qb = qb_i(En, sigb1, m1);
+    comp qb1 = qb_i(En, sigb1, m1);
+    comp qb1_deep = qb_i(En, sigb1_deep, m1); 
     comp qb2 = qb_i(En, sigb2, m2); 
 
     double sigp_initial = 3.3; 
@@ -1983,10 +1985,10 @@ void test_Gs_surface_1()
     double sigp_points = 200000; 
     double del_sigp = std::abs(sigp_initial - sigp_final)/sigp_points; 
 
-    double preal_initial = -0.5;//-1.5; 
-    double preal_final = 0.51;//1.51; 
-    double pimag_initial = -0.6;//-1.5; 
-    double pimag_final = -0.51;//1.51; 
+    double preal_initial = -1.5;//1.24;//-1.5;//0.5;//-1.5;//-0.5;//-1.5; 
+    double preal_final = 1.51;//1.28;//1.51;//1.41;//1.51;//0.51;//1.51; 
+    double pimag_initial = -1.5;//-0.02;//-1.5;//-0.5;//-1.5;//-0.6;//-1.5; 
+    double pimag_final = 1.51;//0.021;//1.51;//0.51;//1.51;//-0.51;//1.51; 
 
     double p_points = 253; 
     double del_preal = std::abs(preal_initial - preal_final)/p_points; 
@@ -2058,12 +2060,21 @@ void test_Gs_surface_1()
         comp pcutplus_val = r_ope_cut_plus(En, x, qb2, mi, mj, mk, eps_for_ope); 
         comp pcutminus_val = r_ope_cut_minus(En, x, qb2, mi, mj, mk, eps_for_ope); 
 
-        fout1<<pcutplus_val.real()<<'\t'
+        fout1<<std::setprecision(20)<<'\t'
+             <<pcutplus_val.real()<<'\t'
              <<pcutplus_val.imag()<<'\t'
              <<pcutminus_val.real()<<'\t'
-             <<pcutminus_val.imag()<<std::endl; 
+             <<pcutminus_val.imag()<<'\t'
+             <<qb1.real()<<'\t'
+             <<qb1.imag()<<'\t'
+             <<qb1_deep.real()<<'\t'
+             <<qb1_deep.imag()<<'\t'
+             <<qb2.real()<<'\t'
+             <<qb2.imag()<<std::endl; 
     }
     fout1.close(); 
+
+
 }
 
 
@@ -3544,9 +3555,9 @@ int main()
     
     //SA Method Testing:
     //test_SA_method_1(); 
-    //test_SA_method_vs_N();
+    test_SA_method_vs_N();
 
     //Going back to OPE again
-    test_Gs_surface_1();
+    //test_Gs_surface_1();
     return 0;
 }
