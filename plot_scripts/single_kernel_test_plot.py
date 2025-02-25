@@ -32,6 +32,12 @@ def surface_plot_1(opefile, singularity_file, N):
     Imcutplus = DATA2[1]
     Recutminus = DATA2[2]
     Imcutminus = DATA2[3]
+    reqb1 = DATA2[4][0]
+    imqb1 = DATA2[5][0]
+    reqb1_deep = DATA2[6][0]
+    imqb1_deep = DATA2[7][0]
+    reqb2 = DATA2[8][0]
+    imqb2 = DATA2[9][0]
 
 
     xi = np.linspace(re_p.min(), re_p.max(), N)
@@ -49,8 +55,8 @@ def surface_plot_1(opefile, singularity_file, N):
     ax.set_ylim(im_p.min(), im_p.max()) 
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.tick_params(axis='both', which='minor', labelsize=20)
-    ax.contour(Xi, Yi, Z, levels=np.linspace(-300, 300, num=2000), linewidths=0.5, colors='black', linestyles='solid')
-    h0 = ax.contourf(Xi, Yi, Z, levels=np.linspace(-30, 30, num=30))
+    ax.contour(Xi, Yi, Z, levels=np.linspace(-10, 10, num=200), linewidths=0.5, colors='black', linestyles='solid')
+    h0 = ax.contourf(Xi, Yi, Z, levels=np.linspace(-10, 10, num=300))
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", "5%", pad="3%")
     cbar = fig.colorbar(h0, cax=cax, orientation="vertical")
@@ -60,11 +66,16 @@ def surface_plot_1(opefile, singularity_file, N):
 
     ax.plot(Recutplus, Imcutplus, marker='o',markerfacecolor="red", markersize=1, color="black",linestyle='none', markeredgewidth=2, markeredgecolor='red')
     ax.plot(Recutminus, Imcutminus, marker='o',markerfacecolor="blue", markersize=1, color="black",linestyle='none', markeredgewidth=2, markeredgecolor='blue')
+    ax.plot(reqb1, imqb1, marker='o',markerfacecolor="orange", markersize=10, color="black",linestyle='none', markeredgewidth=2, markeredgecolor='orange')
+    #ax.plot(reqb1_deep, imqb1_deep, marker='o',markerfacecolor="yellow", markersize=10, color="black",linestyle='none', markeredgewidth=2, markeredgecolor='yellow')
+    
+    #ax.plot(reqb2, imqb2, marker='o',markerfacecolor="yellow", markersize=10, color="black",linestyle='none', markeredgewidth=2, markeredgecolor='yellow')
             
     plt.tight_layout()
     outfilename = str(opefile).split(".")
     output = outfilename[0] + ".png"
     #plt.savefig(output)
+    plt.draw()
     plt.show()         
     #plt.close() 
 
