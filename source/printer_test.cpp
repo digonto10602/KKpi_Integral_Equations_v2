@@ -2249,8 +2249,8 @@ void plot_single_integral_equation_components()
 
     
 
-    double number_of_points = 1000.0; 
-    double number_of_points_1 = 1000.0; 
+    double number_of_points = 500.0; 
+    double number_of_points_1 = 500.0; 
 
     comp sigb1plus = sigma_b_plus(a0_1, m1, m2);
     comp sigb1minus = sigma_b_minus(a0_1, m1, m2); 
@@ -2322,9 +2322,13 @@ void plot_single_integral_equation_components()
     double eta_1 = 1.0; 
     double eta_2 = 0.5; 
 
-    flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
-    flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points_1);
+    //flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
+    //flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points_1);
 
+    comp kmin = 0.0; 
+    simple_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, kmin, kmax_for_m1, number_of_points);
+    simple_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, kmin, kmax_for_m2, number_of_points); 
+    
     /*
     std::cout<<"pvec for m1m2 = "<<std::endl; 
     vec_printer(pvec_for_m1m2); 
@@ -2441,7 +2445,7 @@ void plot_single_integral_equation_components()
 
     //Print all values of Bmat for individual i vals 
     //and the surface plot of Bmat 
-    char bmat_plots_plus_surface = 'n'; 
+    char bmat_plots_plus_surface = 'y'; 
     if(bmat_plots_plus_surface=='y')
     {
     std::ofstream fout1; 
@@ -2452,12 +2456,16 @@ void plot_single_integral_equation_components()
 
     fout2.open(filename1.c_str()); 
     
+    //Here we change Bmat to Bmat - 1 
+    Eigen::MatrixXcd one1(total_size, total_size); 
+    one1 = Eigen::MatrixXcd::Identity(total_size, total_size); 
+    B_mat1 = B_mat1 - one1; 
     
     for(int i=0; i<B_mat1.rows(); ++i)
     {
         int ival = i; 
         filename = "bmat_file_i_"  + std::to_string(i) + ".dat"; 
-        fout1.open(filename.c_str()); 
+        //fout1.open(filename.c_str()); 
 
         for(int j=0; j<B_mat1.cols(); ++j)
         {
@@ -2504,6 +2512,8 @@ void plot_single_integral_equation_components()
                      <<"k="<<mom_k<<'\t'
                      <<"wt="<<weight_k<<'\t'
                      <<"Bmat="<<B_mat1(i,j)<<std::endl; 
+            
+            /*
             fout1<<j<<'\t'
                  <<mom_p.real()<<'\t'
                  <<mom_p.imag()<<'\t'
@@ -2515,7 +2525,9 @@ void plot_single_integral_equation_components()
                  <<weight_k.imag()<<'\t'
                  <<B_mat1(i,j).real()<<'\t'
                  <<B_mat1(i,j).imag()<<std::endl; 
-            
+            */
+
+
             fout2<<i<<'\t'
                  <<j<<'\t'
                  <<mom_p.real()<<'\t'
@@ -2529,7 +2541,7 @@ void plot_single_integral_equation_components()
                  <<B_mat1(i,j).real()<<'\t'
                  <<B_mat1(i,j).imag()<<std::endl; 
         }
-        fout1.close(); 
+        //fout1.close(); 
     }
     fout2.close(); 
     }
@@ -3585,14 +3597,14 @@ int main()
     //compare_pcuts();
     
     //compare_Bmats(); 
-    //plot_single_integral_equation_components();
+    plot_single_integral_equation_components();
     //test_dpqb_vs_N_building_2();
     //test_dpqb_vs_N_50_eta_dependence();
     //test_delta_rhophib_density_with_omp();
     
     //SA Method Testing:
     //test_SA_method_1(); 
-    test_SA_method_vs_N();
+    //test_SA_method_vs_N();
 
     //Going back to OPE again
     //test_Gs_surface_1();
