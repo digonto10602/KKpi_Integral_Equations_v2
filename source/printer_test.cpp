@@ -1985,10 +1985,10 @@ void test_Gs_surface_1()
     double sigp_points = 200000; 
     double del_sigp = std::abs(sigp_initial - sigp_final)/sigp_points; 
 
-    double preal_initial = -1.5;//1.24;//-1.5;//0.5;//-1.5;//-0.5;//-1.5; 
-    double preal_final = 1.51;//1.28;//1.51;//1.41;//1.51;//0.51;//1.51; 
-    double pimag_initial = -1.5;//-0.02;//-1.5;//-0.5;//-1.5;//-0.6;//-1.5; 
-    double pimag_final = 1.51;//0.021;//1.51;//0.51;//1.51;//-0.51;//1.51; 
+    double preal_initial = 1.16;//-1.5;//1.24;//-1.5;//0.5;//-1.5;//-0.5;//-1.5; 
+    double preal_final = 1.27;//1.51;//1.28;//1.51;//1.41;//1.51;//0.51;//1.51; 
+    double pimag_initial = -0.2;//-1.5;//-0.02;//-1.5;//-0.5;//-1.5;//-0.6;//-1.5; 
+    double pimag_final = 0.21;//1.51;//0.021;//1.51;//0.51;//1.51;//-0.51;//1.51; 
 
     double p_points = 253; 
     double del_preal = std::abs(preal_initial - preal_final)/p_points; 
@@ -2074,7 +2074,40 @@ void test_Gs_surface_1()
     }
     fout1.close(); 
 
+    std::ofstream fout2;
+    std::string filename3 = "qvec_1.dat";
+    std::string filename4 = "qvec_2.dat"; 
 
+    comp kmin = 0.0; 
+    comp kmax_for_m1 = pmom(En, 0.0, m1); 
+    comp kmax_for_m2 = pmom(En, 0.0, m2); 
+
+    std::vector<comp> pvec_for_m1m2;
+    std::vector<comp> weights_for_pvec_for_m1m2; 
+    std::vector<comp> kvec_for_m1m1; 
+    std::vector<comp> weights_for_kvec_for_m1m1; 
+    double eps_for_contour = 0.1; 
+    int number_of_points = 1000; 
+    contour_1(pvec_for_m1m2, weights_for_pvec_for_m1m2, kmin, qb1, qb1_deep, kmax_for_m1, eps_for_contour, number_of_points); 
+    contour_2(kvec_for_m1m1, weights_for_kvec_for_m1m1, kmin, qb2, kmax_for_m2, eps_for_contour, number_of_points); 
+
+    fout2.open(filename3.c_str()); 
+    for(int i=0; i<pvec_for_m1m2.size(); ++i)
+    {
+        comp p = pvec_for_m1m2[i]; 
+        fout2<<p.real()<<'\t'
+             <<p.imag()<<std::endl; 
+    }
+    fout2.close(); 
+
+    fout2.open(filename4.c_str()); 
+    for(int i=0;i<kvec_for_m1m1.size(); ++i)
+    {
+        comp p = kvec_for_m1m1[i]; 
+        fout2<<p.real()<<'\t'
+             <<p.imag()<<std::endl; 
+    }
+    fout2.close(); 
 }
 
 
@@ -3432,8 +3465,8 @@ void test_SA_method_vs_N()
     comp qb_val2plus = qb_i(En, sigb2plus, m2);
     comp qb_val2minus = qb_i(En, sigb2minus, m2);
 
-    comp kmax_for_m1 = pmom(En, 0.0, m1); 
-    comp kmax_for_m2 = pmom(En, 0.0, m2); 
+    comp kmax_for_m1 = 1.0;//pmom(En, 0.0, m1); 
+    comp kmax_for_m2 = 1.0;//pmom(En, 0.0, m2); 
     comp epsilon_for_kvec = 1.0e-5; 
 
     std::cout<<"kmax_for_m1 = "<<kmax_for_m1<<std::endl; 
@@ -3441,7 +3474,7 @@ void test_SA_method_vs_N()
 
     
     comp qb_1 = qb_val1plus; 
-    comp qb_2 = qb_1;//qb_val2plus; 
+    comp qb_2 = qb_val2plus; 
     comp sigb1 = sigb1plus;
     comp sigb2 = sigb2plus; 
 
@@ -3449,8 +3482,8 @@ void test_SA_method_vs_N()
     comp delEn = std::abs(En_initial - En_final)/En_points; 
 
     //N range = [50, 500] and [500, 5000]
-    int N_initial = 50; 
-    int N_final = 500; 
+    int N_initial = 10;//50; 
+    int N_final = 50; 
     int N_points = 0; 
     int del_N = 1;//std::abs(N_initial - N_final)/N_points; 
     N_points = std::abs((N_initial - N_final)/del_N);
@@ -3461,7 +3494,7 @@ void test_SA_method_vs_N()
     double del_eta = std::abs(eta_final - eta_initial)/eta_points;  
 
     std::ofstream fout; 
-    std::string filename = "Mphib_SA_method_vs_N_eta_25_1_3_forpaper.dat";
+    std::string filename = "Mphib_SA_method_vs_N_eta_25_contours.dat";
     fout.open(filename.c_str()); 
 
     for(int i=0; i<N_points; ++i)
@@ -3470,7 +3503,7 @@ void test_SA_method_vs_N()
 
         double eta_for_eps = 25; 
 
-        double eps_for_m2k_1 = energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
+        double eps_for_m2k_1 = 0.0;//energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
         double eps_for_m2k_2 = eps_for_m2k_1; 
         double eps_for_ope_1 = eps_for_m2k_1; 
         double eps_for_ope_2 = eps_for_m2k_2; 
@@ -3485,12 +3518,16 @@ void test_SA_method_vs_N()
         std::vector<comp> weights_for_pvec_for_m1m2; 
         std::vector<comp> weights_for_kvec_for_m1m1; 
 
-        flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
-        flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points);
+        //flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
+        //flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points);
 
         //simple_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, 0.0, 0.25*kmax_for_m1, number_of_points); 
         //simple_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, 0.0, kmax_for_m2, number_of_points); 
+        double eps_for_contour = 0.1; 
+        //contour_1(pvec_for_m1m2, weights_for_pvec_for_m1m2, 0.0, qb_1, qb_1 + eps_for_contour, kmax_for_m1, eps_for_contour, number_of_points);
+        contour_2(pvec_for_m1m2, weights_for_pvec_for_m1m2, 0.0, qb_1, kmax_for_m1, eps_for_contour, number_of_points);
         
+        contour_2(kvec_for_m1m1, weights_for_kvec_for_m1m1, 0.0, qb_2, kmax_for_m2, eps_for_contour, number_of_points); 
         char debug = 'n'; 
         Eigen::MatrixXcd dqq_mat; 
 
