@@ -3780,10 +3780,11 @@ void compare_d11qk_and_d11pq()
     
     Eigen::MatrixXcd dpq;
     Eigen::MatrixXcd dqp; 
+    Eigen::MatrixXcd dqq1; 
 
     //Here we do the previos method
     test_dpqb_solver_ERE_1(dpq, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_1, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, number_of_points, debug );
-
+    test_dqq_interpolator_1(dqq1, dpq, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_1, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, number_of_points, debug );
     //std::cout<<dpq<<std::endl; 
 
     Eigen::MatrixXcd d11pq(1, size1);
@@ -3794,12 +3795,12 @@ void compare_d11qk_and_d11pq()
 
     }
 
-
     //Here we check the recent method
+    Eigen::MatrixXcd dqq2;
     Eigen::MatrixXcd dpk; 
     test_dpk_solver_ERE_1(dpk, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_1, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, number_of_points, debug); 
     test_dqk_interpolator_from_dpk(dqp, dpk, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_1, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, number_of_points, debug);
-   
+    test_dqq_interpolator_from_dqk(dqq2, dqp, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_1, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, number_of_points, debug); 
     //std::cout<<d11pq<<std::endl; 
 
     Eigen::MatrixXcd d11qp(1, size1); 
@@ -3831,7 +3832,8 @@ void compare_d11qk_and_d11pq()
     }
     fout.close(); 
 
-
+    std::cout<<"dqq1\n"<<dqq1<<std::endl; 
+    std::cout<<"dqq2\n"<<dqq2<<std::endl; 
 }
 
 
