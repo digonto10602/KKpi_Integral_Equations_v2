@@ -1829,6 +1829,127 @@ comp delta_epsilon_notused_anymore( comp sigk,
 
 //comp dela_M2k_ERE(  )
 
+//Here we solve the integral equation for 
+//arbitrary momentum dS(p,k)
+void test_dpk_solver_ERE_1( Eigen::MatrixXcd &dmatpk,
+                            comp En,
+                            double m1, 
+                            double m2, 
+                            std::vector<comp> &pvec_for_m1m2,
+                            std::vector<comp> &weights_for_pvec_for_m1m2,
+                            std::vector<comp> &kvec_for_m1m1, 
+                            std::vector<comp> &weights_for_kvec_for_m1m1, 
+                            comp &qb_val, //relative spectator momentum for two-body bound-state
+                            double eps_for_m2k, 
+                            double eps_for_ope, 
+                            double eps_for_cutoff, 
+                            comp total_P, 
+                            double a0_m1,
+                            double r0_m1,
+                            double eta_1, 
+                            double a0_m2,
+                            double r0_m2,
+                            double eta_2,  
+                            int number_of_points,
+                            char debug    )
+{
+    //char debug = 'n';
+    double mi = m1;
+    double mj = m1; 
+    double mk = m2; 
+
+
+    comp kmax_for_m1 = pmom(En, 0.0, m1);
+    comp kmax_for_m2 = pmom(En, 0.0, m2); 
+
+    comp epsilon_for_kvec = 1.0e-5; 
+
+    if(debug=='y')
+    {
+        std::cout<<"kmax_for_m1 = "<<kmax_for_m1<<std::endl; 
+        std::cout<<"kmax_for_m2 = "<<kmax_for_m2<<std::endl; 
+
+    }
+
+    /*
+    std::vector<comp> pvec_for_m1m2;
+    std::vector<comp> weights_for_pvec_for_m1m2; 
+    std::vector<comp> kvec_for_m1m1; 
+    std::vector<comp> weights_for_kvec_for_m1m1; 
+
+    flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
+
+    int number_of_points1 = number_of_points; 
+    flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points1);
+
+    pvec_m1m2 = pvec_for_m1m2; 
+    weights_pvec = weights_for_pvec_for_m1m2; 
+    kvec_m1m1 = kvec_for_m1m1; 
+    weights_kvec = weights_for_kvec_for_m1m1; 
+    */
+
+    if(debug=='y')
+    {
+        std::cout<<"pvec for m1m2 = "<<std::endl; 
+        vec_printer(pvec_for_m1m2); 
+        std::cout<<"kvec for m1m1 = "<<std::endl; 
+        vec_printer(kvec_for_m1m1); 
+        std::cout<<"=============================="<<std::endl; 
+    }
+
+
+    Eigen::MatrixXcd B_mat; 
+    Eigen::MatrixXcd negG_mat; 
+    Eigen::MatrixXcd d_mat; 
+
+    comp sigb = sigma_b_plus(a0_m1, mj, mk);
+    comp qb = qb_i(En, sigb, mi);
+    qb_val = qb; 
+    double relerr; 
+
+    test_Bmat_2plus1_system_ERE_1( B_mat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2 );
+    //std::cout<<"here"<<std::endl; 
+    //std::cout<<"Bmat 1 determinant = "<<B_mat.determinant()<<std::endl;
+
+    //Eigen::MatrixXcd B_mat1; 
+    //test_Bmat_GMtilde_multiplied_2plus1_system_ERE(B_mat1, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, a0_m2); 
+
+    //std::cout<<"Bmat 2 determinant = "<<B_mat1.determinant()<<std::endl; 
+
+    negative_Gmat_2plus1_system(negG_mat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_ope, eps_for_cutoff, total_P); 
+    //negative_GSpqb_mat(negG_mat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, qb_val, m1, m2, eps_for_ope, eps_for_cutoff, total_P);
+    //std::cout<<"here"<<std::endl; 
+
+    LinearSolver_2(B_mat, d_mat, negG_mat, relerr); 
+
+    //GPU Solver 
+    int mat_length = pvec_for_m1m2.size() + kvec_for_m1m1.size(); 
+    int mat_width = static_cast<int>(negG_mat.cols()); 
+    //d_mat = Eigen::MatrixXcd(mat_length, mat_width);
+
+    //std::cout<<"here"<<std::endl; 
+    //std::cout<<mat_width<<std::endl; 
+    //cusolverComplex_mat(B_mat, negG_mat, d_mat, mat_length, mat_width); 
+
+    if(debug=='y')
+    {
+        std::cout<<"Bmat = "<<std::endl; 
+        std::cout<<B_mat<<std::endl; 
+        std::cout<<"==========================="<<std::endl; 
+        std::cout<<"negG_mat = "<<std::endl; 
+        std::cout<<negG_mat<<std::endl; 
+        std::cout<<"==========================="<<std::endl;
+        std::cout<<"d_mat = "<<std::endl; 
+        std::cout<<d_mat<<std::endl; 
+        std::cout<<"==========================="<<std::endl; 
+        std::cout<<"relative error of inversion = "<<relerr<<std::endl; 
+
+    }
+
+    dmatpk = d_mat; 
+
+}
+
 
 
 #endif

@@ -2249,8 +2249,8 @@ void plot_single_integral_equation_components()
 
     
 
-    double number_of_points = 500.0; 
-    double number_of_points_1 = 500.0; 
+    double number_of_points = 250.0; 
+    double number_of_points_1 = 250.0; 
 
     comp sigb1plus = sigma_b_plus(a0_1, m1, m2);
     comp sigb1minus = sigma_b_minus(a0_1, m1, m2); 
@@ -2285,7 +2285,7 @@ void plot_single_integral_equation_components()
     comp En_final = threeparticle_threshold; 
     comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
     comp En_2 = En_initial; 
-    comp En = std::sqrt(8.2);//(En_1 + En_2)/2.0; 
+    comp En = std::sqrt(8.2);//2.0*m1 + 2.5*m2;//std::sqrt(8.2);//(En_1 + En_2)/2.0; 
     
 
     
@@ -2445,7 +2445,7 @@ void plot_single_integral_equation_components()
 
     //Print all values of Bmat for individual i vals 
     //and the surface plot of Bmat 
-    char bmat_plots_plus_surface = 'y'; 
+    char bmat_plots_plus_surface = 'n'; 
     if(bmat_plots_plus_surface=='y')
     {
     std::ofstream fout1; 
@@ -2550,7 +2550,7 @@ void plot_single_integral_equation_components()
     negative_GSpqb_mat(negGSpqb, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, qb_val1plus, m1, m2, eps_for_ope, eps_for_cutoff, total_P); 
 
 
-    char gmat_plot = 'n';
+    char gmat_plot = 'y';
     if(gmat_plot=='y')
     {
 
@@ -2728,6 +2728,119 @@ void plot_single_integral_equation_components()
     //results
     //check with old code if they generate the same
     //numbers or not
+
+    //check Gmat(p,k)
+
+    char gmat_pk_plot = 'y';
+    
+    if(gmat_pk_plot=='y')
+    {
+        std::ofstream fout; 
+        std::string filename = "gmat_pk_surface.dat";
+
+        fout.open(filename.c_str()); 
+
+        int size1 = pvec_for_m1m2.size(); 
+        int size2 = kvec_for_m1m1.size(); 
+        int total_size = size1 + size2; 
+
+        std::vector<comp> mom_vec;
+        mom_vec.insert(mom_vec.begin(), pvec_for_m1m2.begin(), pvec_for_m1m2.end()); 
+        mom_vec.insert(mom_vec.end(), kvec_for_m1m1.begin(), kvec_for_m1m1.end()); 
+
+        std::vector<comp> weights_vec;
+        weights_vec.insert(weights_vec.begin(), weights_for_pvec_for_m1m2.begin(), weights_for_pvec_for_m1m2.end()); 
+        weights_vec.insert(weights_vec.end(), weights_for_kvec_for_m1m1.begin(), weights_for_kvec_for_m1m1.end()); 
+        
+        total_size = mom_vec.size(); 
+
+        double mi, mj, mk; 
+
+        for(int i=0; i<total_size; ++i)
+        {
+            for(int j=0; j<total_size; ++j)
+            {
+                comp p = mom_vec[i]; 
+                comp k = mom_vec[j];
+                comp G = {0.0, 0.0};
+                if(i<size1 && j<size1)
+                {
+                    mi = m1;
+                    mj = m1; 
+                    mk = m2; 
+
+                    G = GS_pk(En, p, k, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
+                }
+                else if(i>=size1 && j<size1)
+                {
+                    mi = m1;
+                    mj = m2; 
+                    mk = m1; 
+
+                    G = GS_pk(En, p, k, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
+                }
+                else if(i<size1 && j>=size1)
+                {
+                    mi = m2;
+                    mj = m1; 
+                    mk = m1; 
+
+                    G = GS_pk(En, p, k, mi, mj, mk, eps_for_ope, eps_for_cutoff); 
+                }
+                else 
+                {
+                    G = {0.0, 0.0};
+                }
+
+                fout<<std::setprecision(20)
+                    <<i<<'\t'
+                    <<j<<'\t'
+                    <<p.real()<<'\t'
+                    <<p.imag()<<'\t'
+                    <<k.real()<<'\t'
+                    <<k.imag()<<'\t'
+                    <<G.real()<<'\t'
+                    <<G.imag()<<std::endl; 
+                
+                std::cout<<"i:"<<i<<'\t'
+                         <<"j:"<<j<<'\t'
+                         <<"p:"<<p<<'\t'
+                         <<"k:"<<k<<'\t'
+                         <<"G:"<<G<<std::endl; 
+            }
+        }
+        fout.close(); 
+
+        std::string filename2 = "neg_gmat_surface.dat"; 
+        fout.open(filename2.c_str()); 
+
+        Eigen::MatrixXcd negGmat; 
+
+        negative_Gmat_2plus1_system(negGmat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_ope, eps_for_cutoff, total_P); 
+
+        int G_rows = negGmat.rows(); 
+        int G_cols = negGmat.cols(); 
+        
+        for(int i=0; i<G_rows; ++i)
+        {
+            for(int j=0; j<G_cols; ++j)
+            {
+                fout<<std::setprecision(20)
+                    <<i<<'\t'
+                    <<j<<'\t'
+                    <<negGmat(i,j).real()<<'\t'
+                    <<negGmat(i,j).imag()<<std::endl; 
+            
+                std::cout<<i<<'\t'
+                         <<j<<'\t'
+                         <<negGmat(i,j)<<std::endl; 
+            }
+
+        }
+        fout.close(); 
+
+    }
+
     
    
 
@@ -3608,5 +3721,7 @@ int main()
 
     //Going back to OPE again
     //test_Gs_surface_1();
+
+
     return 0;
 }
