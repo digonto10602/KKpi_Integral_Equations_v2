@@ -1168,6 +1168,70 @@ void Mphib_degenerate_testing_vs_N()
     }
 }
 
+void Mphib_degenerate_testing_vs_En_3d_data_generator()
+{
+    double m = 1.0; 
+    double a0 = 16.0; 
+    double total_P = 0.0; 
+    double eps_for_ope = 0.0; 
+    double eps_for_cutoff = 0.0; 
+    int number_of_points = 150; 
+
+    comp sigb = sigma_b_plus(a0, m, m); 
+    comp phibval = std::sqrt(sigb) + m; 
+    //std::cout<<sigb<<'\t'<<phibval<<std::endl; 
+    double En_initial = std::real(phibval); 
+    double En_final = 3.0*m; 
+    double En_points = 250; 
+    double En = std::abs(En_initial + En_final)/2.0; 
+
+    double eta = 25; 
+
+    double del_En = std::abs(En_initial - En_final)/En_points; 
+
+    int N_initial = 500; 
+    int N_final = 5000; 
+    int N_points = 10;
+    int del_N = std::abs(N_initial - N_final)/N_points; 
+
+    double En_real_initial = 8.7;
+    double En_real_final = 9.1; 
+    double En_real_points = 100;
+    double del_En_real = std::abs(En_real_initial - En_real_final)/En_real_points; 
+
+    double En_imag_initial = -0.01; 
+    double En_imag_final = 0.0101; 
+    double En_imag_points = 100;
+    double del_En_imag = std::abs(En_imag_initial - En_imag_final)/En_imag_points; 
+
+    std::ofstream fout; 
+    std::string filename = "mphib_degenerate_3d_test.dat"; 
+    fout.open(filename.c_str()); 
+
+    for(int i=0; i<En_real_points; ++i)
+    {
+        for(int j=0; j<En_imag_points; ++j)
+        {
+            double En_real = En_real_initial + i*del_En_real; 
+            double En_imag = En_imag_initial + j*del_En_imag; 
+            comp En = En_real + ii*En_imag; 
+
+            comp qb = qb_i(En, sigb, m); 
+            comp kmax = pmom(En, 0.0, m); 
+            double eps_for_m2k = 0.000000000001; 
+
+            comp mphib; 
+
+            Mphib_degenerate_mass_3d(En, m, a0, total_P, 0.0, 0.0, 0.0, number_of_points, mphib); 
+
+            fout<<std::setprecision(20)<<En_real<<'\t'<<En_imag<<'\t'<<mphib.real()<<'\t'<<mphib.imag()<<std::endl; 
+            std::cout<<En_real<<'\t'<<En_imag<<'\t'<<mphib.real()<<'\t'<<mphib.imag()<<std::endl; 
+
+        }
+    }
+    
+}
+
 void Mphib_degenerate_testing_vs_N_En_onefourth()
 {
     double m = 1.0; 
@@ -3683,6 +3747,87 @@ void test_SA_method_vs_N()
 
 }
 
+void check_with_sebastian()
+{
+    double m1 = 1.0;
+    double m2 = 0.9;//0.99999999990;//0.999; 
+    double a0_m1 = 2.0; 
+    double a0_m2 = 2.0; 
+    double r0_m1 = 0.0; 
+    double r0_m2 = 0.0; 
+    double eta_1 = 1.0; 
+    double eta_2 = 0.5; 
+
+    //double En = 1.95;
+    double total_P = 0.0; 
+    double r = 0; 
+    int number_of_points = 10;  
+
+    
+
+    /*-----------------------------------------*/
+
+    comp sigb1plus = sigma_b_plus(a0_m1, m1, m2);
+    comp sigb1minus = sigma_b_minus(a0_m1, m1, m2); 
+    comp sigb2plus = sigma_b_plus(a0_m2, m1, m1); 
+    comp sigb2minus = sigma_b_minus(a0_m2, m1, m1); 
+    comp phib1plus = std::sqrt(sigb1plus) + m1;
+    comp phib1minus = std::sqrt(sigb1minus) + m1;
+    comp phib2plus = std::sqrt(sigb2plus) + m2;
+    comp phib2minus = std::sqrt(sigb2minus) + m2;
+
+
+    std::cout<<"sigb1+ = "<<sigb1plus<<std::endl; 
+    std::cout<<"sigb1- = "<<sigb1minus<<std::endl; 
+    
+    std::cout<<"sigb2+ = "<<sigb2plus<<std::endl; 
+    std::cout<<"sigb2- = "<<sigb2minus<<std::endl; 
+
+    std::cout<<"phib+ threshold 1 = "<<phib1plus<<std::endl; 
+    std::cout<<"phib- threshold 1 = "<<phib1minus<<std::endl; 
+    std::cout<<"phib+ threshold 2 = "<<phib2plus<<std::endl; 
+    std::cout<<"phib- threshold 2 = "<<phib2minus<<std::endl; 
+
+    comp threeparticle_threshold = (m1 + m1 + m2); 
+
+    //comp En = (phib1 + threeparticle_threshold)/2.0;
+
+    std::cout<<"threeparticle threshold = "<<threeparticle_threshold<<std::endl; 
+
+    
+    //abort();
+
+    
+    /* Generating a file here to check */
+
+    comp En_initial = phib1plus; 
+    comp En_final = threeparticle_threshold; 
+    comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
+    comp En_2 = En_initial; 
+    comp s = 8.2; 
+    comp En = std::sqrt(s);//(En_1 + En_2)/2.0; 
+
+    //qb vals for i=1 and i=2 case:
+    comp qb_val1plus = qb_i(En, sigb1plus, m1);
+    comp qb_val1minus = qb_i(En, sigb1minus, m1);
+    comp qb_val2plus = qb_i(En, sigb2plus, m2);
+    comp qb_val2minus = qb_i(En, sigb2minus, m2);
+
+    comp kmax_for_m1 = pmom(En, 0.0, m1); 
+    comp kmax_for_m2 = pmom(En, 0.0, m2); 
+    comp epsilon_for_kvec = 1.0e-5; 
+
+    std::cout<<"kmax_for_m1 = "<<kmax_for_m1<<std::endl; 
+    std::cout<<"kmax_for_m2 = "<<kmax_for_m2<<std::endl; 
+
+    
+    comp qb_1 = qb_val1plus; 
+    comp qb_2 = qb_val2plus; 
+    comp sigb1 = sigb1plus;
+    comp sigb2 = sigb2plus; 
+
+}
+
 
 int main()
 {
@@ -3710,7 +3855,7 @@ int main()
     //compare_pcuts();
     
     //compare_Bmats(); 
-    plot_single_integral_equation_components();
+    //plot_single_integral_equation_components();
     //test_dpqb_vs_N_building_2();
     //test_dpqb_vs_N_50_eta_dependence();
     //test_delta_rhophib_density_with_omp();
@@ -3722,6 +3867,9 @@ int main()
     //Going back to OPE again
     //test_Gs_surface_1();
 
+    //check_with_sebastian(); 
+
+    Mphib_degenerate_testing_vs_En_3d_data_generator();
 
     return 0;
 }
