@@ -3747,7 +3747,11 @@ void test_SA_method_vs_N()
 
 }
 
+<<<<<<< HEAD
 void check_with_sebastian()
+=======
+void compare_d11qk_and_d11pq()
+>>>>>>> 7fe1b5aea8f6546d0b8e0756e08ca997da048ba6
 {
     double m1 = 1.0;
     double m2 = 0.9;//0.99999999990;//0.999; 
@@ -3761,7 +3765,11 @@ void check_with_sebastian()
     //double En = 1.95;
     double total_P = 0.0; 
     double r = 0; 
+<<<<<<< HEAD
     int number_of_points = 10;  
+=======
+    int number_of_points = 2000;  
+>>>>>>> 7fe1b5aea8f6546d0b8e0756e08ca997da048ba6
 
     
 
@@ -3799,11 +3807,16 @@ void check_with_sebastian()
 
     
     /* Generating a file here to check */
+<<<<<<< HEAD
 
     comp En_initial = phib1plus; 
     comp En_final = threeparticle_threshold; 
     comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
     comp En_2 = En_initial; 
+=======
+    std::ofstream fout;
+    
+>>>>>>> 7fe1b5aea8f6546d0b8e0756e08ca997da048ba6
     comp s = 8.2; 
     comp En = std::sqrt(s);//(En_1 + En_2)/2.0; 
 
@@ -3820,12 +3833,96 @@ void check_with_sebastian()
     std::cout<<"kmax_for_m1 = "<<kmax_for_m1<<std::endl; 
     std::cout<<"kmax_for_m2 = "<<kmax_for_m2<<std::endl; 
 
+<<<<<<< HEAD
     
     comp qb_1 = qb_val1plus; 
     comp qb_2 = qb_val2plus; 
     comp sigb1 = sigb1plus;
     comp sigb2 = sigb2plus; 
 
+=======
+    double eta_for_eps = 25; 
+
+    double eps_for_m2k = energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
+    double eps_for_ope = eps_for_m2k; 
+    double eps_for_cutoff = 0.0; 
+    comp qb_1 = qb_val1plus; 
+    comp qb_2 = qb_1;//qb_val2plus; 
+    comp sigb1 = sigb1plus;
+    comp sigb2 = sigb2plus; 
+
+    std::vector<comp> pvec_for_m1m2;
+    std::vector<comp> kvec_for_m1m1; 
+    std::vector<comp> weights_for_pvec_for_m1m2; 
+    std::vector<comp> weights_for_kvec_for_m1m1; 
+
+    //flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
+    //flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points);
+
+    simple_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, 0.0, kmax_for_m1, number_of_points); 
+    simple_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, 0.0, kmax_for_m2, number_of_points); 
+    
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+    char debug = 'n'; 
+    
+    Eigen::MatrixXcd dpq;
+    Eigen::MatrixXcd dqp; 
+    Eigen::MatrixXcd dqq1; 
+
+    //Here we do the previos method
+    test_dpqb_solver_ERE_1(dpq, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_1, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, number_of_points, debug );
+    test_dqq_interpolator_1(dqq1, dpq, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_1, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, number_of_points, debug );
+    //std::cout<<dpq<<std::endl; 
+
+    Eigen::MatrixXcd d11pq(1, size1);
+    
+    for(int i=0; i<size1; ++i)
+    {
+        d11pq(0, i) = dpq(i, 0); 
+
+    }
+
+    //Here we check the recent method
+    Eigen::MatrixXcd dqq2;
+    Eigen::MatrixXcd dpk; 
+    test_dpk_solver_ERE_1(dpk, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_1, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, number_of_points, debug); 
+    test_dqk_interpolator_from_dpk(dqp, dpk, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_1, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, number_of_points, debug);
+    test_dqq_interpolator_from_dqk(dqq2, dqp, En, m1, m2, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, qb_1, eps_for_m2k, eps_for_ope, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2, number_of_points, debug); 
+    //std::cout<<d11pq<<std::endl; 
+
+    Eigen::MatrixXcd d11qp(1, size1); 
+    //Eigen::MatrixXcd d11pq(1, size1); 
+        
+    for(int i=0; i<size1; ++i)
+    {
+        d11qp(0, i) = dqp(0, i);
+    }
+
+    std::string filename = "dpq_vs_dqp.dat";
+    fout.open(filename.c_str()); 
+
+    for(int i=0; i<size1; ++i)
+    {
+        fout<<std::setprecision(20)
+            <<i<<'\t'
+            <<pvec_for_m1m2[i].real()<<'\t'
+            <<pvec_for_m1m2[i].imag()<<'\t'
+            <<d11pq(0,i).real()<<'\t'
+            <<d11pq(0,i).imag()<<'\t'
+            <<d11qp(0,i).real()<<'\t'
+            <<d11qp(0,i).imag()<<std::endl; 
+        
+        std::cout<<i<<'\t'
+            <<pvec_for_m1m2[i]<<'\t'
+            <<d11pq(0,i)<<'\t'
+            <<d11qp(0,i)<<std::endl; 
+    }
+    fout.close(); 
+
+    std::cout<<"dqq1\n"<<dqq1<<std::endl; 
+    std::cout<<"dqq2\n"<<dqq2<<std::endl; 
+>>>>>>> 7fe1b5aea8f6546d0b8e0756e08ca997da048ba6
 }
 
 
@@ -3866,6 +3963,7 @@ int main()
 
     //Going back to OPE again
     //test_Gs_surface_1();
+    compare_d11qk_and_d11pq();
 
     //check_with_sebastian(); 
 
