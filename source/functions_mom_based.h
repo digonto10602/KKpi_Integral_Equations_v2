@@ -154,6 +154,43 @@ comp GS_pk( comp En,
 
 }
 
+comp GS_pk_hard( comp En, 
+    comp p, 
+    comp k, 
+    double mi,  
+    double mj, 
+    double mk,
+    double eps, //This is the epsilon for OPE
+    double epsilon_h //This epsilon is for cutoff function 
+)
+{
+comp ii = {0.0,1.0};
+
+comp sigp = sigma(En, p, mi, 0.0);
+comp sigk = sigma(En, k, mj, 0.0); 
+
+comp Hp = cutoff_function_1(sigp, mj, mk, epsilon_h);
+comp Hk = cutoff_function_1(sigk, mi, mk, epsilon_h); 
+
+comp omgp = omega_func(p, mi);
+comp omgk = omega_func(k, mj);
+
+comp A = En - omgp - omgk; 
+comp zpk = A*A - p*p - k*k - mk*mk; 
+
+comp pk = p*k; 
+
+comp num = zpk + ii*eps - 2.0*pk;
+comp denom = zpk + ii*eps + 2.0*pk;
+
+comp result = - 1.0/(4.0*pk) * std::log(num/denom); 
+//comp result = - 1.0/(4.0*pk) * std::log(num/denom); 
+
+return result; 
+
+}
+
+
 //This uses two different epsilons for ope and
 //cutoff based on which spectator is in i and j
 comp GS_pk_1( comp En, 

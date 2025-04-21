@@ -1815,6 +1815,119 @@ void Mphib_degenerate_mass( comp En,
              <<number_of_points<<std::endl; 
 }
 
+
+void Mphib_degenerate_mass_3d( comp En, 
+                            double m,
+                            double a0,
+                            comp total_P,
+                            double eps_for_ope, 
+                            double eps_for_m2k, 
+                            double eps_for_cutoff,  
+                            int number_of_points,
+                            comp &result   )
+{
+    comp ii = {0.0,1.0}; 
+    comp pi = std::acos(-1.0); 
+    double eta_i = 0.5; //This is the symmetry factor for identical particles
+
+    comp kmax = pmom(En, 0.0, m); 
+
+    std::vector<comp> pvec;
+    std::vector<comp> weights; 
+
+    flavor_based_momentum_vector(pvec, weights, En, m, number_of_points); 
+
+    int size = pvec.size(); 
+    //Here we create the Bmat
+    Eigen::MatrixXcd Bmat(size, size);
+
+    for(int i=0; i<size; ++i)
+    {
+        for(int j=0; j<size; ++j)
+        {
+            comp p = pvec[i]; 
+            comp k = pvec[j]; 
+            comp w = weights[j]; 
+            comp omgk = omega_func(k, m); 
+
+            comp G = GS_pk(En, p, k, m, m, m, eps_for_ope, eps_for_cutoff); 
+            comp W = w*k*k/(pow(2.0*pi,2.0)*omgk);
+            comp M = M2k_ERE(eta_i, En, k, total_P, a0, 0.0, m, m, m, eps_for_m2k); 
+
+            if(i==j)
+            {
+                Bmat(i,j) = 1.0 + W*G*M; 
+            }
+            else 
+            {
+                Bmat(i,j) = W*G*M; 
+            }
+        }
+    }
+
+    //Here we create the negative Gpq vec 
+
+    comp sigb = sigma_b_plus(a0, m, m); 
+    comp qb = qb_i(En, sigb, m); 
+
+    Eigen::VectorXcd negGvec(size); 
+
+    for(int i=0; i<size; ++i)
+    {
+        comp p = pvec[i];
+        
+        comp G = GS_pk(En, p, qb, m, m, m, eps_for_ope, eps_for_cutoff); 
+
+        negGvec(i) = -G; 
+    }
+
+    //Here we solve for dpq 
+    Eigen::VectorXcd dpq(size); 
+    double relerr; 
+    LinearSolver_3( Bmat, dpq, negGvec, relerr);
+
+    //Here we perform the interpolation to dqq 
+    comp int_res = {0.0,0.0}; 
+    comp dqq = {0.0,0.0}; 
+    comp Gqq = GS_pk(En, qb, qb, m, m, m, eps_for_ope, eps_for_cutoff);
+    
+    for(int i=0; i<size; ++i)
+    {
+        comp k = pvec[i]; 
+        comp w = weights[i]; 
+        comp omgk = omega_func(k, m); 
+
+        comp G = GS_pk(En, qb, k, m, m, m, eps_for_ope, eps_for_cutoff); 
+        comp M = M2k_ERE(eta_i, En, k, total_P, a0, 0.0, m, m, m, eps_for_m2k);
+        comp W = w*k*k/(pow(2.0*pi,2.0)*omgk);
+
+        int_res = int_res + W*G*M*dpq(i); 
+    }
+
+    dqq = -Gqq - int_res; 
+
+    comp gval = gfunc(sigb, a0);
+    comp mphib = gval*gval*dqq; 
+    comp rhophib_val = rhophib(qb, En); 
+    comp rhophib_mphib = rhophib_val*mphib; 
+
+    double diff = (double)std::abs((std::imag(1.0/mphib) + std::real(rhophib_val))/(std::real(rhophib_val)))*100.0; 
+
+    result = mphib; 
+    /*
+    std::cout<<std::setprecision(20); 
+    std::cout<<std::real(En)<<'\t'
+             <<std::real(En*En)<<'\t'
+             <<std::real(rhophib_mphib)<<'\t'
+             <<std::imag(rhophib_mphib)<<'\t'
+             <<std::imag(1.0/mphib)<<'\t'
+             <<std::real(rhophib_val)<<'\t'
+             <<diff<<'\t'
+             <<number_of_points<<std::endl; 
+    */
+}
+
+
 /*  SA Method */
 comp delta_epsilon_notused_anymore( comp sigk, 
                     comp sigb, 
