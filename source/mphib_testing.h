@@ -2063,6 +2063,505 @@ void test_dpk_solver_ERE_1( Eigen::MatrixXcd &dmatpk,
 
 }
 
+void test_dqk_interpolator_from_dpk(    Eigen::MatrixXcd &dqk_mat,
+                                        Eigen::MatrixXcd &dpk_mat,
+                                        comp En, 
+                                        double m1, 
+                                        double m2, 
+                                        std::vector<comp> &pvec_for_m1m2,
+                                        std::vector<comp> &weights_for_pvec_for_m1m2,
+                                        std::vector<comp> &kvec_for_m1m1, 
+                                        std::vector<comp> &weights_for_kvec_for_m1m1, 
+                                        comp &qb, 
+                                        double eps_for_m2k, 
+                                        double eps_for_ope, 
+                                        double eps_for_cutoff, 
+                                        comp total_P, 
+                                        double a0_m1, 
+                                        double r0_m1, 
+                                        double eta_1,
+                                        double a0_m2, 
+                                        double r0_m2, 
+                                        double eta_2, 
+                                        int number_of_points, 
+                                        char debug  )
+{
+    comp ii = {0.0, 1.0}; 
+    comp pi = std::acos(-1.0);
 
+    double mi = m1; 
+    double mj = m1; 
+    double mk = m2; 
+
+    int size1 = pvec_for_m1m2.size();
+    int size2 = kvec_for_m1m1.size(); 
+
+    //for (i,j) = 1 1 and k = 2
+    
+    mi = m1; 
+    mj = m1;
+    mk = m2; 
+
+    Eigen::MatrixXcd G_11(1, size1);
+    
+    for(int i=0; i<size1; ++i)
+    {
+        comp k = pvec_for_m1m2[i];
+        comp G = GS_pk(En, qb, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+        G_11(0,i) = G;
+
+    }
+
+    //for (i,j) = 1 2 and k = 1
+    
+    mi = m1; 
+    mj = m2;
+    mk = m1; 
+
+    Eigen::MatrixXcd G_12(1, size2);
+    
+    for(int i=0; i<size2; ++i)
+    {
+        comp k = kvec_for_m1m1[i];
+        comp G = GS_pk(En, qb, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+        G_12(0,i) = std::sqrt(2.0)*G;
+
+    }
+
+    //for (i,j) = 2 1 and k = 1
+    
+    mi = m2; 
+    mj = m1;
+    mk = m1; 
+
+    Eigen::MatrixXcd G_21(1, size1);
+    
+    for(int i=0; i<size1; ++i)
+    {
+        comp k = pvec_for_m1m2[i];
+        comp G = GS_pk(En, qb, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+        G_21(0,i) = std::sqrt(2.0)*G;
+
+    }
+
+    Eigen::MatrixXcd Gmat(2, size1+size2); 
+
+    Eigen::MatrixXcd Filler22(1, size2); 
+    Filler22 = Eigen::MatrixXcd::Zero(1, size2); 
+
+    Gmat << G_11, G_12, 
+            G_21, Filler22; 
+
+    if(debug=='y')
+    {
+        std::cout<<"======== Gqk ==========="<<std::endl; 
+        std::cout<<Gmat<<std::endl;
+        std::cout<<"========================"<<std::endl; 
+    }
+
+    Eigen::MatrixXcd M2k_m1m2(size1, size1);
+    Eigen::MatrixXcd M2k_m1m1(size2, size2);
+
+    M2k_m1m2 = Eigen::MatrixXcd::Zero(size1,size1);
+    M2k_m1m1 = Eigen::MatrixXcd::Zero(size2,size2); 
+
+    Eigen::MatrixXcd M2k_filler0_12(size1, size2); 
+    Eigen::MatrixXcd M2k_filler0_21(size2, size1); 
+
+    M2k_filler0_12 = Eigen::MatrixXcd::Zero(size1, size2); 
+    M2k_filler0_21 = Eigen::MatrixXcd::Zero(size2, size1); 
+
+    //When m1 is in the spectator
+    mi = m1; 
+    mj = m1; 
+    mk = m2; 
+
+    for(int i=0; i<size1; ++i)
+    {
+        comp p = pvec_for_m1m2[i];
+        comp M2k = M2k_ERE(eta_1, En, p, total_P, a0_m1, r0_m1, mi, mj, mk, eps_for_m2k);
+        M2k_m1m2(i,i) = M2k; 
+    }
+
+    //When m2 is in the spectator
+    mi = m2; 
+    mj = m1; 
+    mk = m1; 
+
+    for(int i=0; i<size2; ++i)
+    {
+        comp k = kvec_for_m1m1[i]; 
+        comp M2k = M2k_ERE(eta_2, En, k, total_P, a0_m2, r0_m2, mi, mj, mk, eps_for_m2k);
+        M2k_m1m1(i,i) = M2k; 
+    }
+
+    //M2k_m1m1 = 0.5*M2k_m1m1; //Multiplied with 0.5 because of identical particle symmetry
+
+    Eigen::MatrixXcd M2k_mat(size1 + size2, size1 + size2); 
+
+    M2k_mat <<  M2k_m1m2, M2k_filler0_12,
+                M2k_filler0_21, 0.5*M2k_m1m1; //0.5 is multiplied due to the symmetry factor of identical particles
+    
+    if(debug=='y')
+    {
+        std::cout<<"======== M(k)mat ==========="<<std::endl; 
+        std::cout<<M2k_mat<<std::endl;
+        std::cout<<"========================"<<std::endl; 
+    }
+    
+    //Now we build the G mat inside the integral with the weights 
+    
+    //for (i,j) = 1 1 and k = 2
+    mi = m1;
+    mj = m1; 
+    mk = m2; 
+    Eigen::MatrixXcd WG_11(1, size1);
+
+    for(int i=0; i<size1; ++i)
+    {
+        comp k = pvec_for_m1m2[i]; 
+        comp weights = weights_for_pvec_for_m1m2[i]; 
+        comp omgk = omega_func(k, mj); 
+
+        comp G = GS_pk(En, qb, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+        comp W = weights*k*k/(pow(2.0*pi,2.0)*omgk);
+        WG_11(0,i) = W*G; 
+    }
+
+    //for (i,j) = 1 2 and k = 1
+    mi = m1;
+    mj = m2; 
+    mk = m1; 
+    Eigen::MatrixXcd WG_12(1, size2);
+
+    for(int i=0; i<size2; ++i)
+    {
+        comp k = kvec_for_m1m1[i]; 
+        comp weights = weights_for_kvec_for_m1m1[i]; 
+        comp omgk = omega_func(k, mj); 
+
+        comp G = GS_pk(En, qb, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+        comp W = weights*k*k/(pow(2.0*pi,2.0)*omgk);
+        WG_12(0,i) = W*G; 
+    }
+
+    //for (i,j) = 2 1 and k = 1
+    mi = m2;
+    mj = m1; 
+    mk = m1; 
+    Eigen::MatrixXcd WG_21(1, size1);
+
+    for(int i=0; i<size1; ++i)
+    {
+        comp k = pvec_for_m1m2[i]; 
+        comp weights = weights_for_pvec_for_m1m2[i]; 
+        comp omgk = omega_func(k, mj); 
+
+        comp G = GS_pk(En, qb, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+        comp W = weights*k*k/(pow(2.0*pi,2.0)*omgk);
+        WG_21(0,i) = W*G; 
+    }
+
+    WG_12 = std::sqrt(2.0)*WG_12; 
+    WG_21 = std::sqrt(2.0)*WG_21; 
+
+    Eigen::MatrixXcd WG_mat(2, size1 + size2); 
+    Eigen::MatrixXcd WG_Filler0_22(1, size2);
+    WG_Filler0_22 = Eigen::MatrixXcd::Zero(1, size2);
+    
+    WG_mat <<   WG_11, WG_12,
+                WG_21, WG_Filler0_22; 
+    
+    if(debug=='y')
+    {
+        std::cout<<"======== WGqk ==========="<<std::endl; 
+        std::cout<<WG_mat<<std::endl;
+        std::cout<<"========================="<<std::endl; 
+    }
+
+
+    if(debug=='y')
+    {
+        Eigen::MatrixXcd first_op = WG_mat*M2k_mat;
+
+        std::cout<<"======== First Op WGM2 ==========="<<std::endl; 
+        std::cout<<first_op<<std::endl;
+        std::cout<<"=================================="<<std::endl; 
+    
+        Eigen::MatrixXcd second_op = first_op*dpk_mat; 
+
+        std::cout<<"======== Second Op WGM2dpqb ==========="<<std::endl; 
+        std::cout<<second_op<<std::endl;
+        std::cout<<"======================================="<<std::endl; 
+    }   
+    
+    Eigen::MatrixXcd temp_mat_op = WG_mat*M2k_mat*dpk_mat;
+    dqk_mat = - Gmat - temp_mat_op; 
+
+    if(debug=='y')
+    {
+        std::cout<<"======== result dqbk mat =========="<<std::endl; 
+        std::cout<<dqk_mat<<std::endl; 
+        std::cout<<"==================================="<<std::endl; 
+    }
+}
+
+void test_dqq_interpolator_from_dqk(    Eigen::MatrixXcd &dqq_mat,
+                                        Eigen::MatrixXcd &dqk_mat,
+                                        comp En, 
+                                        double m1, 
+                                        double m2, 
+                                        std::vector<comp> &pvec_for_m1m2,
+                                        std::vector<comp> &weights_for_pvec_for_m1m2,
+                                        std::vector<comp> &kvec_for_m1m1, 
+                                        std::vector<comp> &weights_for_kvec_for_m1m1, 
+                                        comp &qb, 
+                                        double eps_for_m2k, 
+                                        double eps_for_ope, 
+                                        double eps_for_cutoff, 
+                                        comp total_P, 
+                                        double a0_m1, 
+                                        double r0_m1, 
+                                        double eta_1,
+                                        double a0_m2, 
+                                        double r0_m2, 
+                                        double eta_2, 
+                                        int number_of_points, 
+                                        char debug  )
+{
+    //char debug = 'n';
+    comp ii = {0.0,1.0};
+    comp pi = std::acos(-1.0); 
+
+    double mi = m1; 
+    double mj = m1; 
+    double mk = m2; 
+
+    int size1 = pvec_for_m1m2.size();
+    int size2 = kvec_for_m1m1.size(); 
+
+    Eigen::MatrixXcd Filler0_22(1, 1);
+    Filler0_22 = Eigen::MatrixXcd::Zero(1, 1);
+
+    //for (i,j) = 1 1 and k = 2
+    
+    mi = m1; 
+    mj = m1;
+    mk = m2; 
+
+    Eigen::MatrixXcd G_11(1, 1);
+    
+    comp G = GS_pk(En, qb, qb, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+            
+    G_11(0,0) = G;
+
+    //for (i,j) = 1 2 and k = 1
+    
+    mi = m1; 
+    mj = m2;
+    mk = m1; 
+
+    Eigen::MatrixXcd G_12(1, 1);
+    
+    G = GS_pk(En, qb, qb, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+            
+    G_12(0,0) = G;
+
+    //for (i,j) = 2 1 and k = 1
+    
+    mi = m2; 
+    mj = m1;
+    mk = m1; 
+
+    Eigen::MatrixXcd G_21(1, 1);
+    
+    G = GS_pk(En, qb, qb, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+            
+    G_21(0,0) = G;
+
+    G_12 = std::sqrt(2.0)*G_12; 
+    G_21 = std::sqrt(2.0)*G_21; 
+
+    Eigen::MatrixXcd Gmat(2, 2); 
+
+    Gmat << G_11, G_12, 
+            G_21, Filler0_22;
+
+    if(debug=='y')
+    {
+        std::cout<<"======== Gqq ==========="<<std::endl; 
+        std::cout<<Gmat<<std::endl;
+        std::cout<<"========================"<<std::endl; 
+    }
+
+    Eigen::MatrixXcd negGqbqb_mat;
+
+    negGqbqb_mat = -1.0*Gmat;
+
+    //First we build the M2 matrix 
+    //int size1 = pvec_for_m1m2.size(); 
+    //int size2 = kvec_for_m1m1.size(); 
+
+    Eigen::MatrixXcd M2k_m1m2(size1, size1);
+    Eigen::MatrixXcd M2k_m1m1(size2, size2);
+
+    M2k_m1m2 = Eigen::MatrixXcd::Zero(size1,size1);
+    M2k_m1m1 = Eigen::MatrixXcd::Zero(size2,size2); 
+
+    Eigen::MatrixXcd M2k_filler0_12(size1, size2); 
+    Eigen::MatrixXcd M2k_filler0_21(size2, size1); 
+
+    M2k_filler0_12 = Eigen::MatrixXcd::Zero(size1, size2); 
+    M2k_filler0_21 = Eigen::MatrixXcd::Zero(size2, size1); 
+
+    //When m1 is in the spectator
+    mi = m1; 
+    mj = m1; 
+    mk = m2; 
+
+    for(int i=0; i<size1; ++i)
+    {
+        comp p = pvec_for_m1m2[i];
+        comp M2k = M2k_ERE(eta_1, En, p, total_P, a0_m1, r0_m1, mi, mj, mk, eps_for_m2k);
+        M2k_m1m2(i,i) = M2k; 
+    }
+
+    //When m2 is in the spectator
+    mi = m2; 
+    mj = m1; 
+    mk = m1; 
+
+    for(int i=0; i<size2; ++i)
+    {
+        comp k = kvec_for_m1m1[i]; 
+        comp M2k = M2k_ERE(eta_2, En, k, total_P, a0_m2, r0_m2, mi, mj, mk, eps_for_m2k);
+        M2k_m1m1(i,i) = M2k; 
+    }
+
+    //M2k_m1m1 = 0.5*M2k_m1m1; //Multiplied with 0.5 because of identical particle symmetry
+
+    Eigen::MatrixXcd M2k_mat(size1 + size2, size1 + size2); 
+
+    M2k_mat <<  M2k_m1m2, M2k_filler0_12,
+                M2k_filler0_21, 0.5*M2k_m1m1; //0.5 is multiplied due to the symmetry factor of identical particles
+    
+    if(debug=='y')
+    {
+        std::cout<<"======== M(k)mat ==========="<<std::endl; 
+        std::cout<<M2k_mat<<std::endl;
+        std::cout<<"========================"<<std::endl; 
+    }
+    /*--------------------------------------------------*/
+
+    //Now we build the G mat inside the integral with the weights 
+    
+    //for (i,j) = 1 1 and k = 2
+    mi = m1;
+    mj = m1; 
+    mk = m2; 
+    Eigen::MatrixXcd WG_11(1, size1);
+
+    for(int i=0; i<size1; ++i)
+    {
+        comp k = pvec_for_m1m2[i]; 
+        comp weights = weights_for_pvec_for_m1m2[i]; 
+        comp omgk = omega_func(k, mj); 
+
+        comp G = GS_pk(En, qb, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+        comp W = weights*k*k/(pow(2.0*pi,2.0)*omgk);
+        WG_11(0,i) = W*G; 
+    }
+
+    //for (i,j) = 1 2 and k = 1
+    mi = m1;
+    mj = m2; 
+    mk = m1; 
+    Eigen::MatrixXcd WG_12(1, size2);
+
+    for(int i=0; i<size2; ++i)
+    {
+        comp k = kvec_for_m1m1[i]; 
+        comp weights = weights_for_kvec_for_m1m1[i]; 
+        comp omgk = omega_func(k, mj); 
+
+        comp G = GS_pk(En, qb, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+        comp W = weights*k*k/(pow(2.0*pi,2.0)*omgk);
+        WG_12(0,i) = W*G; 
+    }
+
+    //for (i,j) = 2 1 and k = 1
+    mi = m2;
+    mj = m1; 
+    mk = m1; 
+    Eigen::MatrixXcd WG_21(1, size1);
+
+    for(int i=0; i<size1; ++i)
+    {
+        comp k = pvec_for_m1m2[i]; 
+        comp weights = weights_for_pvec_for_m1m2[i]; 
+        comp omgk = omega_func(k, mj); 
+
+        comp G = GS_pk(En, qb, k, mi, mj, mk, eps_for_ope, eps_for_cutoff);
+        comp W = weights*k*k/(pow(2.0*pi,2.0)*omgk);
+        WG_21(0,i) = W*G; 
+    }
+
+    WG_12 = std::sqrt(2.0)*WG_12; 
+    WG_21 = std::sqrt(2.0)*WG_21; 
+
+    Eigen::MatrixXcd WG_mat(2, size1 + size2); 
+    Eigen::MatrixXcd WG_Filler0_22(1, size2);
+    WG_Filler0_22 = Eigen::MatrixXcd::Zero(1, size2);
+    
+    WG_mat <<   WG_11, WG_12,
+                WG_21, WG_Filler0_22; 
+    
+    if(debug=='y')
+    {
+        std::cout<<"======== WGqk ==========="<<std::endl; 
+        std::cout<<WG_mat<<std::endl;
+        std::cout<<"========================="<<std::endl; 
+    }
+
+
+    if(debug=='y')
+    {
+        Eigen::MatrixXcd first_op = WG_mat*M2k_mat;
+
+        std::cout<<"======== First Op WGM2 ==========="<<std::endl; 
+        std::cout<<first_op<<std::endl;
+        std::cout<<"=================================="<<std::endl; 
+    
+        Eigen::MatrixXcd second_op = first_op*dqk_mat; 
+
+        std::cout<<"======== Second Op WGM2dpqb ==========="<<std::endl; 
+        std::cout<<second_op<<std::endl;
+        std::cout<<"======================================="<<std::endl; 
+    }
+
+    Eigen::MatrixXcd converted_dkq_from_dqk(size1 + size2, 2); 
+
+    for(int i=0; i<size1+size2; ++i)
+    {
+        for(int j=0; j<2; ++j)
+        {
+            converted_dkq_from_dqk(i,j) = dqk_mat(j,i); 
+        }
+    }
+
+    Eigen::MatrixXcd dkq_mat = converted_dkq_from_dqk; 
+
+
+    Eigen::MatrixXcd temp_mat_op = WG_mat*M2k_mat*dkq_mat;
+    dqq_mat = negGqbqb_mat - temp_mat_op; 
+
+    if(debug=='y')
+    {
+        std::cout<<"======== result dqbqb mat ========="<<std::endl; 
+        std::cout<<dqq_mat<<std::endl; 
+        std::cout<<"==================================="<<std::endl; 
+    }
+
+}
 
 #endif

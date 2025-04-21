@@ -1075,7 +1075,7 @@ void negative_Gmat_2plus1_system(   Eigen::MatrixXcd &neg_G_mat,
                                     double eps_for_cutoff,
                                     comp total_P    )
 {
-    char debug = 'y';
+    char debug = 'n';
     double mi,mj,mk; 
     comp ii = {0.0,1.0};
     comp pi = std::acos(-1.0); 
