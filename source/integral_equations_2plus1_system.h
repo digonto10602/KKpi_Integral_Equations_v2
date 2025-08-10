@@ -1167,6 +1167,79 @@ void negative_Gmat_2plus1_system(   Eigen::MatrixXcd &neg_G_mat,
 
 }
 
+//This function is the M2k that we use for 2+1 system
+//it makes assumption that the 2 particles in two-body 
+//subchannel for entry (2,2) is identical 
+void test_M2k_mat_builder(  Eigen::MatrixXcd &M2kmat,  
+                            comp En, 
+                            std::vector<comp> &pvec_for_m1m2,
+                            std::vector<comp> &kvec_for_m1m1, 
+                            std::vector<comp> &weights_for_pvec_for_m1m2,
+                            std::vector<comp> &weights_for_kvec_for_m1m1,
+                            double m1, 
+                            double m2, 
+                            double eps_for_m2k_1, 
+                            double eps_for_m2k_2,
+                            comp total_P,
+                            double a0_m1, 
+                            double r0_m1, 
+                            double eta_1, 
+                            double a0_m2, 
+                            double r0_m2, 
+                            double eta_2    )
+{
+    comp ii = {0.0, 1.0}; 
+    comp pi = std::acos(-1.0); 
+
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+
+    Eigen::MatrixXcd M2k_for_m1m2(size1, size1); 
+    Eigen::MatrixXcd M2k_for_m1m1(size2, size2); 
+    Eigen::MatrixXcd Filler0_12(size1, size2); 
+    Eigen::MatrixXcd Filler0_21(size2, size1); 
+
+    M2k_for_m1m2 = Eigen::MatrixXcd::Zero(size1, size1); 
+    M2k_for_m1m1 = Eigen::MatrixXcd::Zero(size2, size2); 
+    Filler0_12 = Eigen::MatrixXcd::Zero(size1, size2); 
+    Filler0_21 = Eigen::MatrixXcd::Zero(size2, size1); 
+
+    double mi = m1;
+    double mj = m1; 
+    double mk = m2; 
+
+    for(int i=0; i<size1; ++i)
+    {
+        comp mom_p = pvec_for_m1m2[i]; 
+
+        comp M2k = M2k_ERE(eta_1, En, mom_p, total_P, a0_m1, r0_m1, mi, mj, mk, eps_for_m2k_1);
+        M2k_for_m1m2(i,i) = M2k; 
+
+    }
+
+    mi = m2;
+    mj = m1; 
+    mk = m1; 
+
+    for(int i=0; i<size2; ++i)
+    {
+        comp mom_k = kvec_for_m1m1[i]; 
+
+        comp M2k = M2k_ERE(eta_2, En, mom_k, total_P, a0_m2, r0_m2, mi, mj, mk, eps_for_m2k_2); 
+
+        M2k_for_m1m1(i,i) = M2k; 
+    }
+
+    Eigen::MatrixXcd M2k_mat(size1 + size2, size1 + size2); 
+
+    M2k_mat <<  M2k_for_m1m2, Filler0_12, 
+                Filler0_21, 0.5*M2k_for_m1m1; 
+
+    M2kmat = M2k_mat; 
+}
+
+
+
 /*===========================================================*/
 
                 //M3df Integral Equation
