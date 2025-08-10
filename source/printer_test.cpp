@@ -2915,7 +2915,7 @@ void test_dpqb_vs_N_building_2()
     double m1 = 1.0;
     double m2 = 0.9;//0.99999999990;//0.999; 
     double a0_1 = 2.0; 
-    double a0_2 = 2.0; 
+    double a0_2 = -2.0; 
     double r0_1 = 0.0; 
     double r0_2 = 0.0; 
     double eta_1 = 1.0; 
@@ -2972,7 +2972,7 @@ void test_dpqb_vs_N_building_2()
     comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
     comp En_2 = En_initial; 
     comp s = 8.2; 
-    comp En = std::sqrt(s);//(En_1 + En_2)/2.0; 
+    comp En = En_1;//std::sqrt(s);//(En_1 + En_2)/2.0; 
 
     //qb vals for i=1 and i=2 case:
     comp qb_val1plus = qb_i(En, sigb1plus, m1);
@@ -2989,8 +2989,8 @@ void test_dpqb_vs_N_building_2()
 
     double eta_for_eps = 25; 
 
-    double eps_for_m2k_1 = 0.0;// = energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
-    double eps_for_m2k_2 = 0.0; 
+    double eps_for_m2k_1 = 0.0;//energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
+    double eps_for_m2k_2 = eps_for_m2k_1;//0.0; 
     double eps_for_ope_1 = eps_for_m2k_1; 
     double eps_for_ope_2 = eps_for_m2k_2; 
     double eps_for_cutoff_1 = 0.0; 
@@ -3044,7 +3044,19 @@ void test_dpqb_vs_N_building_2()
         comp rhophib_mphib = rhophib(qb, En)*mphib; 
         comp rhophib_val = rhophib(qb, En); 
 
-        double diff = (double)std::abs((std::imag(1.0/mphib) + std::real(rhophib_val))/(std::real(rhophib_val)))*100;
+        /*
+            We change some of the factors to test mphib inverse
+            We invert dqq first (its a 4x4 matrix based on the flavors)
+            then we test with unitarity
+        */
+
+        Eigen::MatrixXcd dqq_inv = dqqmat.inverse(); 
+        comp dqq11inv = dqq_inv(0,0); 
+        comp mphibinv = (1.0/(gval*gval))*dqq11inv; 
+
+        //double diff = (double)std::abs((std::imag(1.0/mphib) + std::real(rhophib_val))/(std::real(rhophib_val)))*100;
+        
+        double diff = (double)std::abs((std::imag(mphibinv) + std::real(rhophib_val))/(std::real(rhophib_val)))*100;
         
         std::cout<<std::setprecision(20)<<En.real()<<'\t'<<(En*En).real()<<'\t'<<rhophib_mphib.real()<<'\t'<<rhophib_mphib.imag()<<'\t'<<diff<<'\t'<<number_of_points<<std::endl; 
         //fout<<std::setprecision(20)<<std::real(En)<<'\t'<<std::real(En*En)<<'\t'<<rhophib_mphib.real()<<'\t'<<rhophib_mphib.imag()<<'\t'<<diff<<'\t'<<number_of_points<<std::endl; 
@@ -3593,7 +3605,7 @@ void test_SA_method_vs_N()
     double m1 = 1.0;
     double m2 = 0.9;//0.99999999990;//0.999; 
     double a0_m1 = 2.0; 
-    double a0_m2 = 2.0; 
+    double a0_m2 = -2.0; 
     double r0_m1 = 0.0; 
     double r0_m2 = 0.0; 
     double eta_1 = 1.0; 
@@ -3645,7 +3657,7 @@ void test_SA_method_vs_N()
     comp En_final = threeparticle_threshold; 
     comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
     comp En_2 = En_initial; 
-    comp s = 8.2; 
+    comp s = En_1;//8.2; 
     comp En = std::sqrt(s);//(En_1 + En_2)/2.0; 
 
     //qb vals for i=1 and i=2 case:
@@ -3671,8 +3683,8 @@ void test_SA_method_vs_N()
     comp delEn = std::abs(En_initial - En_final)/En_points; 
 
     //N range = [50, 500] and [500, 5000]
-    int N_initial = 10;//50; 
-    int N_final = 50; 
+    int N_initial = 50;//50; 
+    int N_final = 500; 
     int N_points = 0; 
     int del_N = 1;//std::abs(N_initial - N_final)/N_points; 
     N_points = std::abs((N_initial - N_final)/del_N);
@@ -3710,7 +3722,7 @@ void test_SA_method_vs_N()
         //flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
         //flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points);
 
-        //simple_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, 0.0, 0.25*kmax_for_m1, number_of_points); 
+        //simple_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, 0.0, kmax_for_m1, number_of_points); 
         //simple_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, 0.0, kmax_for_m2, number_of_points); 
         double eps_for_contour = 0.1; 
         //contour_1(pvec_for_m1m2, weights_for_pvec_for_m1m2, 0.0, qb_1, qb_1 + eps_for_contour, kmax_for_m1, eps_for_contour, number_of_points);
@@ -3726,12 +3738,16 @@ void test_SA_method_vs_N()
         comp g1_val = gfunc_i(eta_1, sigb1plus, m1, m2); 
         comp dqq_val = dqq_mat(0,0); 
         comp mphib = g1_val*g1_val*dqq_val; 
+        Eigen::MatrixXcd dqqinv = dqq_mat.inverse(); 
+        comp dqqinv_val = dqqinv(0,0); 
+        comp mphib_inv = (1.0/(g1_val*g1_val))*dqqinv_val; 
         comp rhophib_11 = rhophib(qb_val1plus, En); 
         comp rhoM = rhophib_11*mphib; 
-        double diff = std::abs(((1.0/mphib).imag() + rhophib_11)/rhophib_11)*100.0; 
+        //double diff = std::abs(((1.0/mphib).imag() + rhophib_11)/rhophib_11)*100.0; 
+        double diff = std::abs(((mphib_inv.imag() + rhophib_11)/rhophib_11)*100.0); 
 
         std::cout<<"N = "<<number_of_points<<std::endl; 
-        std::cout<<"Im(1/mphib) = "<<1.0/mphib<<std::endl; 
+        std::cout<<"Im(1/mphib) = "<<mphib_inv<<std::endl; 
         std::cout<<"rhophib = "<<rhophib_11<<std::endl; 
         std::cout<<"diff = "<<diff<<std::endl; 
         std::cout<<"========================"<<std::endl; 
@@ -3747,11 +3763,7 @@ void test_SA_method_vs_N()
 
 }
 
-<<<<<<< HEAD
-void check_with_sebastian()
-=======
 void compare_d11qk_and_d11pq()
->>>>>>> 7fe1b5aea8f6546d0b8e0756e08ca997da048ba6
 {
     double m1 = 1.0;
     double m2 = 0.9;//0.99999999990;//0.999; 
@@ -3765,11 +3777,7 @@ void compare_d11qk_and_d11pq()
     //double En = 1.95;
     double total_P = 0.0; 
     double r = 0; 
-<<<<<<< HEAD
-    int number_of_points = 10;  
-=======
     int number_of_points = 2000;  
->>>>>>> 7fe1b5aea8f6546d0b8e0756e08ca997da048ba6
 
     
 
@@ -3807,16 +3815,8 @@ void compare_d11qk_and_d11pq()
 
     
     /* Generating a file here to check */
-<<<<<<< HEAD
-
-    comp En_initial = phib1plus; 
-    comp En_final = threeparticle_threshold; 
-    comp En_1 = (phib1plus + threeparticle_threshold)/2.0; 
-    comp En_2 = En_initial; 
-=======
     std::ofstream fout;
     
->>>>>>> 7fe1b5aea8f6546d0b8e0756e08ca997da048ba6
     comp s = 8.2; 
     comp En = std::sqrt(s);//(En_1 + En_2)/2.0; 
 
@@ -3833,14 +3833,6 @@ void compare_d11qk_and_d11pq()
     std::cout<<"kmax_for_m1 = "<<kmax_for_m1<<std::endl; 
     std::cout<<"kmax_for_m2 = "<<kmax_for_m2<<std::endl; 
 
-<<<<<<< HEAD
-    
-    comp qb_1 = qb_val1plus; 
-    comp qb_2 = qb_val2plus; 
-    comp sigb1 = sigb1plus;
-    comp sigb2 = sigb2plus; 
-
-=======
     double eta_for_eps = 25; 
 
     double eps_for_m2k = energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
@@ -3922,7 +3914,117 @@ void compare_d11qk_and_d11pq()
 
     std::cout<<"dqq1\n"<<dqq1<<std::endl; 
     std::cout<<"dqq2\n"<<dqq2<<std::endl; 
->>>>>>> 7fe1b5aea8f6546d0b8e0756e08ca997da048ba6
+}
+
+void twoplusone_test()
+{
+    double m1 = 1.0;
+    double m2 = 0.9;//0.99999999990;//0.999; 
+    double a0_m1 = 2.0; 
+    double a0_m2 = 2.0; 
+    double r0_m1 = 0.0; 
+    double r0_m2 = 0.0; 
+    double eta_1 = 1.0; 
+    double eta_2 = 0.5; 
+
+    //double En = 1.95;
+    double total_P = 0.0; 
+    double r = 0; 
+    int number_of_points = 5; 
+    
+    /*-----------------------------------------*/
+
+    comp sigb1plus = sigma_b_plus(a0_m1, m1, m2);
+    comp sigb1minus = sigma_b_minus(a0_m1, m1, m2); 
+    comp sigb2plus = sigma_b_plus(a0_m2, m1, m1); 
+    comp sigb2minus = sigma_b_minus(a0_m2, m1, m1); 
+    comp phib1plus = std::sqrt(sigb1plus) + m1;
+    comp phib1minus = std::sqrt(sigb1minus) + m1;
+    comp phib2plus = std::sqrt(sigb2plus) + m2;
+    comp phib2minus = std::sqrt(sigb2minus) + m2;
+
+
+    std::cout<<"sigb1+ = "<<sigb1plus<<std::endl; 
+    std::cout<<"sigb1- = "<<sigb1minus<<std::endl; 
+    
+    std::cout<<"sigb2+ = "<<sigb2plus<<std::endl; 
+    std::cout<<"sigb2- = "<<sigb2minus<<std::endl; 
+
+    std::cout<<"phib+ threshold 1 = "<<phib1plus<<std::endl; 
+    std::cout<<"phib- threshold 1 = "<<phib1minus<<std::endl; 
+    std::cout<<"phib+ threshold 2 = "<<phib2plus<<std::endl; 
+    std::cout<<"phib- threshold 2 = "<<phib2minus<<std::endl; 
+
+    comp threeparticle_threshold = (m1 + m1 + m2); 
+
+    //comp En = (phib1 + threeparticle_threshold)/2.0;
+
+    std::cout<<"threeparticle threshold = "<<threeparticle_threshold<<std::endl; 
+
+    
+    //abort();
+
+    
+    /* Generating a file here to check */
+    std::ofstream fout;
+    
+    comp s = 8.2; 
+    comp En = 3.0;//(2*m1 + m2)*(2*m1 + m2 + 0.05);//std::sqrt(s);//(En_1 + En_2)/2.0; 
+
+    //qb vals for i=1 and i=2 case:
+    comp qb_val1plus = qb_i(En, sigb1plus, m1);
+    comp qb_val1minus = qb_i(En, sigb1minus, m1);
+    comp qb_val2plus = qb_i(En, sigb2plus, m2);
+    comp qb_val2minus = qb_i(En, sigb2minus, m2);
+
+    comp kmax_for_m1 = pmom(En, 0.0, m1); 
+    comp kmax_for_m2 = pmom(En, 0.0, m2); 
+    comp epsilon_for_kvec = 1.0e-5; 
+
+    std::cout<<"kmax_for_m1 = "<<kmax_for_m1<<std::endl; 
+    std::cout<<"kmax_for_m2 = "<<kmax_for_m2<<std::endl; 
+
+    double eta_for_eps = 25; 
+
+    double eps_for_m2k = energy_dependent_epsilon(eta_for_eps, En, qb_val1plus, sigb1plus, kmax_for_m1, m1, number_of_points ); 
+    double eps_for_ope = eps_for_m2k; 
+    double eps_for_cutoff = 0.0; 
+    comp qb_1 = qb_val1plus; 
+    comp qb_2 = qb_1;//qb_val2plus; 
+    comp sigb1 = sigb1plus;
+    comp sigb2 = sigb2plus; 
+
+    std::vector<comp> pvec_for_m1m2;
+    std::vector<comp> kvec_for_m1m1; 
+    std::vector<comp> weights_for_pvec_for_m1m2; 
+    std::vector<comp> weights_for_kvec_for_m1m1; 
+
+    //flavor_based_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, En, m1, number_of_points);
+    //flavor_based_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, En, m2, number_of_points);
+
+    simple_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, 0.0, kmax_for_m1, number_of_points); 
+    simple_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, 0.0, kmax_for_m2, number_of_points); 
+    
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+    char debug = 'n'; 
+    
+    Eigen::MatrixXcd Bmat; 
+    Eigen::MatrixXcd Gmat; 
+    Eigen::MatrixXcd dmat; 
+
+    test_Bmat_2plus1_system_ERE_2(Bmat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_m2k, eps_for_ope, eps_for_ope, eps_for_cutoff, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2); 
+    negative_Gmat_2plus1_system(Gmat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_ope, eps_for_cutoff, total_P);
+    double relerr;
+    LinearSolver_2(Bmat, dmat, Gmat, relerr); 
+
+
+    std::cout<<Bmat<<std::endl;
+    std::cout<<Gmat<<std::endl; 
+    std::cout<<"=================="<<std::endl; 
+    std::cout<<dmat<<std::endl;
+
+
 }
 
 
@@ -3953,7 +4055,7 @@ int main()
     
     //compare_Bmats(); 
     //plot_single_integral_equation_components();
-    //test_dpqb_vs_N_building_2();
+    test_dpqb_vs_N_building_2();
     //test_dpqb_vs_N_50_eta_dependence();
     //test_delta_rhophib_density_with_omp();
     
@@ -3963,11 +4065,11 @@ int main()
 
     //Going back to OPE again
     //test_Gs_surface_1();
-    compare_d11qk_and_d11pq();
+    //compare_d11qk_and_d11pq();
 
     //check_with_sebastian(); 
 
-    Mphib_degenerate_testing_vs_En_3d_data_generator();
-
+    //Mphib_degenerate_testing_vs_En_3d_data_generator();
+    //twoplusone_test(); 
     return 0;
 }
