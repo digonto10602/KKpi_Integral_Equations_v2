@@ -256,6 +256,19 @@ comp q2k(   comp sig_i,
     return sqrtklntrngle/denom;  
 }
 
+comp rho_i( double eta_i, 
+            comp sig_i, 
+            double mj, 
+            double mk )
+{
+    comp pi = std::acos(-1.0); 
+    comp q2k_val = q2k(sig_i, mj, mk); 
+
+    comp result = eta_i*q2k_val/(8.0*pi*std::sqrt(sig_i));
+
+    return result; 
+}
+
 
 //This shows the spectator momentum for a given flavor for 
 //which the two-body subsystem forms a bound-state.
