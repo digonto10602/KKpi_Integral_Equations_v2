@@ -1238,6 +1238,77 @@ void test_M2k_mat_builder(  Eigen::MatrixXcd &M2kmat,
     M2kmat = M2k_mat; 
 }
 
+//This is a matrix of rho_tilde = -i H^{(i)}(p) rho^{(i)}(p) 
+
+void test_rho_mat_builder_2plus1_system(    Eigen::MatrixXcd &rho_mat,
+                                            comp En, 
+                                            std::vector<comp> &pvec_for_m1m2, 
+                                            std::vector<comp> &weights_for_pvec_for_m1m2, 
+                                            std::vector<comp> &kvec_for_m1m1, 
+                                            std::vector<comp> &weights_for_kvec_for_m1m1, 
+                                            comp total_P, 
+                                            double m1, 
+                                            double m2, 
+                                            double eta1, 
+                                            double eta2,
+                                            double epsilon_h_1,
+                                            double epsilon_h_2 )
+{
+    comp ii = {0.0, 1.0}; 
+    comp pi = std::acos(-1.0); 
+
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+
+    Eigen::MatrixXcd rho_for_m1m2(size1, size1); 
+    Eigen::MatrixXcd rho_for_m1m1(size2, size2); 
+    Eigen::MatrixXcd Filler0_12(size1, size2); 
+    Eigen::MatrixXcd Filler0_21(size2, size1); 
+
+    rho_for_m1m2 = Eigen::MatrixXcd::Zero(size1, size1); 
+    rho_for_m1m1 = Eigen::MatrixXcd::Zero(size2, size2); 
+    Filler0_12 = Eigen::MatrixXcd::Zero(size1, size2); 
+    Filler0_21 = Eigen::MatrixXcd::Zero(size2, size1); 
+
+    //for i = 1, 
+    double mi = m1;
+    double mj = m1; 
+    double mk = m2; 
+
+    for(int i=0; i<size1; ++i)
+    {
+        comp p = pvec_for_m1m2[i]; 
+        comp sigp = sigma(En, p, mi, total_P);
+        comp Hp = cutoff_function_1(sigp, mj, mk, epsilon_h_1);
+        comp rho = rho_i(eta1, sigp, mj, mk); 
+
+        rho_for_m1m2(i,i) = -ii*Hp*rho; 
+    }
+
+    //for i = 2
+    mi = m2;
+    mj = m1; 
+    mk = m1; 
+
+    for(int i=0; i<size2; ++i)
+    {
+        comp p = kvec_for_m1m1[i]; 
+        comp sigp = sigma(En, p, mi, total_P); 
+        comp Hp = cutoff_function_1(sigp, mj, mk, epsilon_h_2);
+        comp rho = rho_i(eta2, sigp, mj, mk); 
+
+        rho_for_m1m1(i,i) = -ii*Hp*rho; 
+    }
+
+    Eigen::MatrixXcd temp_rho_mat(size1 + size2, size1 + size2); 
+
+    temp_rho_mat << rho_for_m1m2, Filler0_12, 
+                    Filler0_21, rho_for_m1m1; 
+
+    rho_mat = temp_rho_mat; 
+    
+}
+
 
 
 /*===========================================================*/
@@ -1248,12 +1319,364 @@ void test_M2k_mat_builder(  Eigen::MatrixXcd &M2kmat,
 
 
 //The following is based on the Ls rescattering matrix 
-void LSmat_2plus1_system(   Eigen::MatrixXcd &Lsmat
-                            )
+//This is Ls(p,k) where p,k are vectors 
+void LSmat_pk_2plus1_system(    Eigen::MatrixXcd &Lsmat,
+                                Eigen::MatrixXcd &M2kmat, 
+                                Eigen::MatrixXcd &rhomat, 
+                                Eigen::MatrixXcd &Dmat,
+                                std::vector<comp> &pvec_for_m1m2, 
+                                std::vector<comp> &weights_for_pvec_for_m1m2,
+                                std::vector<comp> &kvec_for_m1m1,
+                                std::vector<comp> &weights_for_kvec_for_m1m1  )
 {
-    
+    comp ii = {0.0, 1.0};
+    comp pi = std::acos(-1.0); 
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+    Eigen::MatrixXcd Imat(size1+size2, size1+size2);
+    Imat = Eigen::MatrixXcd::Identity(size1+size2, size1+size2); 
+
+    Eigen::MatrixXcd temp_Lsmat;
+
+    temp_Lsmat = (1.0/3.0*Imat - M2kmat*rhomat) - Dmat*rhomat; 
 }
 
+//This function makes Ls(p) by integrating over the second term
+//This will result in a (size_of_spec_vec x 2) rectangular matrix 
+//and a square matrix 
+void LSmat_p_2plus1_system( Eigen::MatrixXcd &Lsmat,
+                            Eigen::MatrixXcd &M2kmat, 
+                            Eigen::MatrixXcd &rhomat, 
+                            Eigen::MatrixXcd &Dmat,
+                            std::vector<comp> &pvec_for_m1m2, 
+                            std::vector<comp> &weights_for_pvec_for_m1m2,
+                            std::vector<comp> &kvec_for_m1m1,
+                            std::vector<comp> &weights_for_kvec_for_m1m1,
+                            double m1, 
+                            double m2  )
+{
+    char debug = 'n'; 
+    double mi = 0, mj = 0, mk = 0; 
+    comp ii = {0.0, 1.0};
+    comp pi = std::acos(-1.0); 
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+    Eigen::MatrixXcd Imat(size1+size2, size1+size2);
+    Imat = Eigen::MatrixXcd::Identity(size1+size2, size1+size2); 
+
+    Eigen::MatrixXcd temp_Lsmat;
+
+    Eigen::MatrixXcd temp_Drho_mat = Dmat*rhomat;
+    Eigen::MatrixXcd temp_wDrho_mat(size1+size2, size1+size2); 
+    Eigen::MatrixXcd sumDrho_mat11(size1,1); 
+    Eigen::MatrixXcd sumDrho_mat12(size1,1);
+    Eigen::MatrixXcd sumDrho_mat21(size2,1);
+    Eigen::MatrixXcd sumDrho_mat22(size2,1); 
+    Eigen::MatrixXcd sumDrho_mat(size1+size2, 2); 
+    //for (i,j) = (1,1) 
+    mi = m1;
+    mj = m1;
+    
+    for(int i=0; i<size1; ++i)
+    {
+        comp temp_sum = {0.0, 0.0}; 
+        for(int j=0; j<size1; ++j)
+        {
+            comp Drho_val = temp_Drho_mat(i,j); 
+            //comp p = pvec_for_m1m2[i]; 
+            comp k = pvec_for_m1m2[j]; 
+            //comp wp = weights_for_pvec_for_m1m2[i]; 
+            comp wk = weights_for_pvec_for_m1m2[j];
+            //comp omegap = omega_func(p, mi);
+            comp omegak = omega_func(k, mj); 
+            comp w = wk*k*k/(std::pow(2.0*pi,2.0)*omegak);
+            comp wDrho_val = w*Drho_val; 
+            temp_sum += wDrho_val; 
+        }
+        sumDrho_mat11(i) = temp_sum; 
+    }
+
+    //for (i,j) = (1,2) 
+    mi = m1;
+    mj = m2;
+    
+    int counter = 0; 
+    for(int i=0; i<size1; ++i)
+    {
+        comp temp_sum = {0.0, 0.0}; 
+        for(int j=size1; j<size1+size2; ++j)
+        {
+            int jind = j - size1; 
+            comp Drho_val = temp_Drho_mat(i,j); 
+            //comp p = pvec_for_m1m2[i]; 
+            comp k = kvec_for_m1m1[jind]; 
+            //comp wp = weights_for_pvec_for_m1m2[i]; 
+            comp wk = weights_for_kvec_for_m1m1[jind];
+            //comp omegap = omega_func(p, mi);
+            comp omegak = omega_func(k, mj); 
+            comp w = wk*k*k/(std::pow(2.0*pi,2.0)*omegak);
+            comp wDrho_val = w*Drho_val; 
+            temp_sum += wDrho_val; 
+        }
+        sumDrho_mat12(counter) = temp_sum; 
+        counter = counter + 1; 
+    }
+
+    //for (i,j) = (2,1) 
+    mi = m2;
+    mj = m1;
+    
+    counter = 0; 
+    for(int i=size1; i<size1+size2; ++i)
+    {
+        comp temp_sum = {0.0, 0.0}; 
+        for(int j=0; j<size1; ++j)
+        {
+            int jind = j - size1; 
+            comp Drho_val = temp_Drho_mat(i,j); 
+            //comp p = pvec_for_m1m2[i]; 
+            comp k = pvec_for_m1m2[j]; 
+            //comp wp = weights_for_pvec_for_m1m2[i]; 
+            comp wk = weights_for_pvec_for_m1m2[j];
+            //comp omegap = omega_func(p, mi);
+            comp omegak = omega_func(k, mj); 
+            comp w = wk*k*k/(std::pow(2.0*pi,2.0)*omegak);
+            comp wDrho_val = w*Drho_val; 
+            temp_sum += wDrho_val; 
+        }
+        sumDrho_mat21(counter) = temp_sum; 
+        counter = counter + 1; 
+    }
+
+    //for (i,j) = (2,2) 
+    mi = m2;
+    mj = m2;
+    
+    counter = 0; 
+    for(int i=size1; i<size1+size2; ++i)
+    {
+        comp temp_sum = {0.0, 0.0}; 
+        for(int j=size1; j<size1+size2; ++j)
+        {
+            int jind = j - size1; 
+            comp Drho_val = temp_Drho_mat(i,j); 
+            //comp p = pvec_for_m1m2[i]; 
+            comp k = kvec_for_m1m1[jind]; 
+            //comp wp = weights_for_pvec_for_m1m2[i]; 
+            comp wk = weights_for_kvec_for_m1m1[jind];
+            //comp omegap = omega_func(p, mi);
+            comp omegak = omega_func(k, mj); 
+            comp w = wk*k*k/(std::pow(2.0*pi,2.0)*omegak);
+            comp wDrho_val = w*Drho_val; 
+            temp_sum += wDrho_val; 
+        }
+        sumDrho_mat22(counter) = temp_sum; 
+        counter = counter + 1; 
+    }
+
+    sumDrho_mat << sumDrho_mat11, sumDrho_mat12,
+                    sumDrho_mat21, sumDrho_mat22;
+
+    std::cout<<sumDrho_mat<<std::endl; 
+
+    Eigen::MatrixXcd firstpart = (1.0/3.0*Imat - M2kmat*rhomat);
+    Eigen::MatrixXcd firstpart_after_integration(size1+size2, 2); 
+    firstpart_after_integration = Eigen::MatrixXcd::Zero(size1+size2, 2); 
+
+    for(int i=0; i<size1; ++i)
+    {
+        firstpart_after_integration(i,0) = firstpart(i,i); 
+    }
+    for(int i=size1; i<size1+size2; ++i)
+    {
+        firstpart_after_integration(i,1) = firstpart(i,i); 
+    }
+
+    if(debug=='y')
+    {
+        std::cout<<"==============================="<<std::endl; 
+        std::cout<<firstpart<<std::endl; 
+        std::cout<<"==============================="<<std::endl; 
+        std::cout<<firstpart_after_integration<<std::endl;
+    }
+    temp_Lsmat = firstpart_after_integration - sumDrho_mat;
+    
+    Lsmat = temp_Lsmat; 
+
+
+}
+
+
+//This is the RSmat for which p_vec is integrated over 
+//and k_vec stays the same, so this should be a 
+//(2 x size_of_spec_vec) matrix 
+void RSmat_p_2plus1_system( Eigen::MatrixXcd &Rsmat,
+                            Eigen::MatrixXcd &M2kmat, 
+                            Eigen::MatrixXcd &rhomat, 
+                            Eigen::MatrixXcd &Dmat,
+                            std::vector<comp> &pvec_for_m1m2, 
+                            std::vector<comp> &weights_for_pvec_for_m1m2,
+                            std::vector<comp> &kvec_for_m1m1,
+                            std::vector<comp> &weights_for_kvec_for_m1m1,
+                            double m1, 
+                            double m2  )
+{
+    char debug = 'y'; 
+    double mi = 0, mj = 0, mk = 0; 
+    comp ii = {0.0, 1.0};
+    comp pi = std::acos(-1.0); 
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+    Eigen::MatrixXcd Imat(size1+size2, size1+size2);
+    Imat = Eigen::MatrixXcd::Identity(size1+size2, size1+size2); 
+
+    Eigen::MatrixXcd temp_Rsmat;
+
+    Eigen::MatrixXcd temp_rhoD_mat = rhomat*Dmat;
+    Eigen::MatrixXcd temp_wrhoD_mat(size1+size2, size1+size2); 
+    Eigen::MatrixXcd sumrhoD_mat11(1, size1); 
+    Eigen::MatrixXcd sumrhoD_mat12(1, size1);
+    Eigen::MatrixXcd sumrhoD_mat21(1, size2);
+    Eigen::MatrixXcd sumrhoD_mat22(1, size2); 
+    Eigen::MatrixXcd sumrhoD_mat(2, size1+size2); 
+    //for (i,j) = (1,1) 
+    mi = m1;
+    mj = m1;
+    
+    for(int i=0; i<size1; ++i)
+    {
+        comp temp_sum = {0.0, 0.0}; 
+        for(int j=0; j<size1; ++j)
+        {
+            comp rhoD_val = temp_rhoD_mat(j,i); 
+            //comp p = pvec_for_m1m2[i]; 
+            comp k = pvec_for_m1m2[j]; 
+            //comp wp = weights_for_pvec_for_m1m2[i]; 
+            comp wk = weights_for_pvec_for_m1m2[j];
+            //comp omegap = omega_func(p, mi);
+            comp omegak = omega_func(k, mi); 
+            comp w = wk*k*k/(std::pow(2.0*pi,2.0)*omegak);
+            comp wrhoD_val = w*rhoD_val; 
+            temp_sum += wrhoD_val; 
+        }
+        sumrhoD_mat11(i) = temp_sum; 
+    }
+
+    //for (i,j) = (1,2) 
+    mi = m1;
+    mj = m2;
+    
+    int counter = 0; 
+    for(int j=size1; j<size1+size2; ++j)
+    {
+        comp temp_sum = {0.0, 0.0}; 
+        for(int i=0; i<size1; ++i)
+        {
+            int jind = j - size1; 
+            comp rhoD_val = temp_rhoD_mat(i,j); 
+            //comp p = pvec_for_m1m2[i]; 
+            comp k = kvec_for_m1m1[i]; 
+            //comp wp = weights_for_pvec_for_m1m2[i]; 
+            comp wk = weights_for_kvec_for_m1m1[i];
+            //comp omegap = omega_func(p, mi);
+            comp omegak = omega_func(k, mi); 
+            comp w = wk*k*k/(std::pow(2.0*pi,2.0)*omegak);
+            comp wrhoD_val = w*rhoD_val; 
+            temp_sum += wrhoD_val; 
+        }
+        sumrhoD_mat12(counter) = temp_sum; 
+        counter = counter + 1; 
+    }
+
+    //for (i,j) = (2,1) 
+    mi = m2;
+    mj = m1;
+    
+    counter = 0; 
+    for(int j=0; j<size1; ++j)
+    {
+        comp temp_sum = {0.0, 0.0}; 
+        for(int i=size1; i<size1+size2; ++i)
+        {
+            int iind = i - size1; 
+            comp rhoD_val = temp_rhoD_mat(i,j); 
+            //comp p = pvec_for_m1m2[i]; 
+            comp k = pvec_for_m1m2[iind]; 
+            //comp wp = weights_for_pvec_for_m1m2[i]; 
+            comp wk = weights_for_pvec_for_m1m2[iind];
+            //comp omegap = omega_func(p, mi);
+            comp omegak = omega_func(k, mi); 
+            comp w = wk*k*k/(std::pow(2.0*pi,2.0)*omegak);
+            comp wrhoD_val = w*rhoD_val; 
+            temp_sum += wrhoD_val; 
+        }
+        sumrhoD_mat21(counter) = temp_sum; 
+        counter = counter + 1; 
+    }
+
+    //for (i,j) = (2,2) 
+    mi = m2;
+    mj = m2;
+    
+    counter = 0; 
+    for(int j=size1; j<size1+size2; ++j)
+    {
+        comp temp_sum = {0.0, 0.0}; 
+        for(int i=size1; i<size1+size2; ++i)
+        {
+            int iind = i - size1; 
+            comp rhoD_val = temp_rhoD_mat(i,j); 
+            //comp p = pvec_for_m1m2[i]; 
+            comp k = kvec_for_m1m1[iind]; 
+            //comp wp = weights_for_pvec_for_m1m2[i]; 
+            comp wk = weights_for_kvec_for_m1m1[iind];
+            //comp omegap = omega_func(p, mi);
+            comp omegak = omega_func(k, mi); 
+            comp w = wk*k*k/(std::pow(2.0*pi,2.0)*omegak);
+            comp wrhoD_val = w*rhoD_val; 
+            temp_sum += wrhoD_val; 
+        }
+        sumrhoD_mat22(counter) = temp_sum; 
+        counter = counter + 1; 
+    }
+
+    sumrhoD_mat << sumrhoD_mat11, sumrhoD_mat12,
+                    sumrhoD_mat21, sumrhoD_mat22;
+
+    std::cout<<sumrhoD_mat<<std::endl; 
+
+    Eigen::MatrixXcd firstpart = (1.0/3.0*Imat - rhomat*M2kmat);
+    Eigen::MatrixXcd firstpart_after_integration(2, size1+size2); 
+    firstpart_after_integration = Eigen::MatrixXcd::Zero(2, size1+size2); 
+
+    for(int i=0; i<size1; ++i)
+    {
+        firstpart_after_integration(0,i) = firstpart(i,i); 
+    }
+    for(int i=size1; i<size1+size2; ++i)
+    {
+        firstpart_after_integration(1,i) = firstpart(i,i); 
+    }
+
+    if(debug=='y')
+    {
+        std::cout<<"==============================="<<std::endl; 
+        std::cout<<firstpart<<std::endl; 
+        std::cout<<"==============================="<<std::endl; 
+        std::cout<<firstpart_after_integration<<std::endl;
+    }
+    temp_Rsmat = firstpart_after_integration - sumrhoD_mat;
+    
+    Rsmat = temp_Rsmat; 
+
+
+}
+
+
+void F3smat_2plus1_system()
+{
+
+}
 
 
 #endif 
