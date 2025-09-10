@@ -1673,8 +1673,62 @@ void RSmat_p_2plus1_system( Eigen::MatrixXcd &Rsmat,
 }
 
 
-void F3smat_2plus1_system()
+void F3smat_2plus1_system(  Eigen::MatrixXcd &F3smat, 
+                            Eigen::MatrixXcd &rhomat, 
+                            Eigen::MatrixXcd &M2mat, 
+                            Eigen::MatrixXcd &Dmat, 
+                            std::vector<comp> &pvec_for_m1m2, 
+                            std::vector<comp> &weights_for_pvec_for_m1m2, 
+                            std::vector<comp> &kvec_for_m1m1, 
+                            std::vector<comp> &weights_for_kvec_for_m1m1,
+                            double m1, 
+                            double m2    )
 {
+    char debug = 'y'; 
+    double mi = 0, mj = 0, mk = 0; 
+    comp ii = {0.0, 1.0};
+    comp pi = std::acos(-1.0); 
+
+    Eigen::MatrixXcd first_term = (1.0/3.0)*rhomat - rhomat*M2mat*rhomat;
+    Eigen::MatrixXcd second_term = rhomat*Dmat*rhomat; 
+
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+    int totsize = size1 + size2; 
+
+    if(debug=='y')
+    {
+        std::cout<<first_term<<std::endl; 
+    }
+
+    comp sum1 = {0.0, 0.0}; 
+    for(int i=0; i<size1; ++i)
+    {
+        comp p = pvec_for_m1m2[i]; 
+        comp wp = weights_for_pvec_for_m1m2[i]; 
+        comp omegap = omega_func(p, m1); 
+        comp w = wp*p*p/(std::pow(2.0*pi,2.0)*omegap); 
+        sum1 = sum1 + w*first_term(i,i); 
+    }
+    comp sum2 = {0.0, 0.0}; 
+    for(int i=size1; i<totsize; ++i)
+    {
+        int iind = i - size1; 
+        comp p = kvec_for_m1m1[iind]; 
+        comp wp = weights_for_kvec_for_m1m1[iind]; 
+        comp omegap = omega_func(p, m2); 
+        comp w = wp*p*p/(std::pow(2.0*pi,2.0)*omegap); 
+        sum2 = sum2 + w*first_term(i,i); 
+    }
+    Eigen::MatrixXcd sum_first_term(2, 2);
+    sum_first_term <<  sum1 , 0.0,
+                       0.0 , sum2; 
+
+    if(debug=='y')
+    {
+        
+        std::cout<<"first part integrated of F3s = "<<sum_first_term<<std::endl; 
+    }
 
 }
 
