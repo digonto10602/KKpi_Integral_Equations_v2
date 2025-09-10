@@ -4178,6 +4178,14 @@ void test_M3df_parts()
     std::cout<<Rsmat<<std::endl; 
     std::cout<<"=========================="<<std::endl; 
 
+    Eigen::MatrixXcd F3smat;
+    F3smat_2plus1_system(F3smat, rho_mat, M2mat, Dmat, 
+                         pvec_for_m1m2, weights_for_pvec_for_m1m2, 
+                         kvec_for_m1m1, weights_for_kvec_for_m1m1, 
+                         m1, m2); 
+    std::cout<<"=========================="<<std::endl; 
+
+
 }
 
 
