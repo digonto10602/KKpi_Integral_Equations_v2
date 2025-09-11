@@ -4183,6 +4183,9 @@ void test_M3df_parts()
                          pvec_for_m1m2, weights_for_pvec_for_m1m2, 
                          kvec_for_m1m1, weights_for_kvec_for_m1m1, 
                          m1, m2); 
+
+    std::cout<<"F3smat"<<std::endl; 
+    std::cout<<F3smat<<std::endl; 
     std::cout<<"=========================="<<std::endl; 
 
 

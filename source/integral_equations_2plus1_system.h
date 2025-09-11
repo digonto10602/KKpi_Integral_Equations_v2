@@ -1726,11 +1726,168 @@ void F3smat_2plus1_system(  Eigen::MatrixXcd &F3smat,
 
     if(debug=='y')
     {
-        
+        std::cout<<"=============================="<<std::endl; 
         std::cout<<"first part integrated of F3s = "<<sum_first_term<<std::endl; 
     }
 
-    
+    //Here we integrate over the rho(p)D(p,k)rho(k)
+
+    //(i,j) = (1,1)
+    //the spectator in both cases are m1 and m1
+    mi = m1; 
+    mj = m1; 
+
+    comp sum11 = {0.0, 0.0}; 
+    for(int i=0; i<size1; ++i)
+    {
+        for(int j=0; j<size1; ++j)
+        {
+            comp val = second_term(i,j); 
+            comp p = pvec_for_m1m2[i]; 
+            comp wp = weights_for_pvec_for_m1m2[i]; 
+            comp k = pvec_for_m1m2[j]; 
+            comp wk = weights_for_pvec_for_m1m2[j]; 
+
+            comp omegap = omega_func(p, mi); 
+            comp omegak = omega_func(k, mj); 
+
+            comp delp = wp*p*p/(std::pow(2.0*pi,2.0)*wp);
+            comp delk = wk*k*k/(std::pow(2.0*pi,2.0)*wk);
+
+            sum11 = sum11 + delp*delk*val;
+
+        }
+    }
+
+    //(i,j) = (1,2)
+    //the spectators are m1 and m2
+    mi = m1; 
+    mj = m2; 
+
+    comp sum12 = {0.0, 0.0}; 
+    for(int i=0; i<size1; ++i)
+    {
+        for(int j=size1; j<totsize; ++j)
+        {
+            int jind = j - size1; 
+            comp val = second_term(i,j); 
+            comp p = pvec_for_m1m2[i]; 
+            comp wp = weights_for_pvec_for_m1m2[i]; 
+            comp k = kvec_for_m1m1[jind]; 
+            comp wk = weights_for_kvec_for_m1m1[jind]; 
+
+            comp omegap = omega_func(p, mi); 
+            comp omegak = omega_func(k, mj); 
+
+            comp delp = wp*p*p/(std::pow(2.0*pi,2.0)*wp);
+            comp delk = wk*k*k/(std::pow(2.0*pi,2.0)*wk);
+
+            sum12 = sum12 + delp*delk*val;
+
+        }
+    }
+
+    //(i,j) = (2,1)
+    //the spectators are m1 and m2
+    mi = m2; 
+    mj = m1; 
+
+    comp sum21 = {0.0, 0.0}; 
+    for(int i=size1; i<totsize; ++i)
+    {
+        for(int j=0; j<size1; ++j)
+        {
+            int iind = i - size1; 
+            int jind = j - size1; 
+            comp val = second_term(i,j); 
+            comp p = kvec_for_m1m1[iind]; 
+            comp wp = weights_for_kvec_for_m1m1[iind]; 
+            comp k = pvec_for_m1m2[j]; 
+            comp wk = weights_for_pvec_for_m1m2[j]; 
+
+            comp omegap = omega_func(p, mi); 
+            comp omegak = omega_func(k, mj); 
+
+            comp delp = wp*p*p/(std::pow(2.0*pi,2.0)*wp);
+            comp delk = wk*k*k/(std::pow(2.0*pi,2.0)*wk);
+
+            sum21 = sum21 + delp*delk*val;
+
+        }
+    }
+
+    //(i,j) = (2,2)
+    //the spectators are m1 and m2
+    mi = m2; 
+    mj = m2; 
+
+    comp sum22 = {0.0, 0.0}; 
+    for(int i=size1; i<totsize; ++i)
+    {
+        for(int j=size1; j<totsize; ++j)
+        {
+            int iind = i - size1; 
+            int jind = j - size1; 
+            comp val = second_term(i,j); 
+            comp p = kvec_for_m1m1[iind]; 
+            comp wp = weights_for_kvec_for_m1m1[iind]; 
+            comp k = kvec_for_m1m1[jind]; 
+            comp wk = weights_for_kvec_for_m1m1[jind]; 
+
+            comp omegap = omega_func(p, mi); 
+            comp omegak = omega_func(k, mj); 
+
+            comp delp = wp*p*p/(std::pow(2.0*pi,2.0)*wp);
+            comp delk = wk*k*k/(std::pow(2.0*pi,2.0)*wk);
+
+            sum22 = sum22 + delp*delk*val;
+
+        }
+    }
+
+    Eigen::MatrixXcd sum_second_term(2, 2); 
+
+    sum_second_term <<  sum11, sum12, 
+                        sum21, sum22; 
+
+    if(debug=='y')
+    {
+        
+        std::cout<<"second part integrated of F3s = "<<sum_second_term<<std::endl; 
+    }
+
+    Eigen::MatrixXcd temp_F3smat; 
+
+    temp_F3smat = sum_first_term - sum_second_term; 
+
+    F3smat = temp_F3smat; 
+
+}
+
+//This function makes a K3iso (2x2) matrix based on its
+//definition given in notes. We take the K3iso function to 
+//be isotropic, meaning that they only depend on the total 
+//three-body energy and not the spectator momentum
+void K3iso_mat_2plus1_system(   Eigen::MatrixXcd &K3iso_mat, 
+                                comp K3iso0,
+                                comp K3iso1, 
+                                comp En, 
+                                double m1, 
+                                double m2   )
+{
+    comp threshold = 2.0*m1 + m2; 
+    comp s = En*En;
+    comp M = threshold; 
+
+    comp delta_term = (s - M*M)/(M*M); 
+    comp K3iso = K3iso0 + K3iso1*delta_term; 
+
+    Eigen::MatrixXcd temp_K3mat(2, 2); 
+
+    temp_K3mat <<   K3iso, K3iso/(std::sqrt(2)),
+                    K3iso/(std::sqrt(2)), K3iso/2; 
+
+    K3iso_mat = temp_K3mat; 
 
 }
 
