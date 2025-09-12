@@ -4204,6 +4204,11 @@ void test_M3df_parts()
     Eigen::MatrixXcd temp_M3df_check;
     temp_M3df_check = Lsmat*((K3iso_mat.inverse() + F3smat).inverse())*Rsmat; 
     std::cout<<temp_M3df_check<<std::endl; 
+    std::cout<<"=========================="<<std::endl; 
+
+    std::cout<<"Ls(p) x Rs(k) = "<<std::endl; 
+    std::cout<<Lsmat*Rsmat<<std::endl; 
+
 
 
 }
