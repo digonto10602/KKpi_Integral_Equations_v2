@@ -4188,6 +4188,23 @@ void test_M3df_parts()
     std::cout<<F3smat<<std::endl; 
     std::cout<<"=========================="<<std::endl; 
 
+    comp K3iso0 = 10000.0; 
+    comp K3iso1 = 12000.0; 
+
+    Eigen::MatrixXcd K3iso_mat; 
+    K3iso_mat_2plus1_system(K3iso_mat, K3iso0, K3iso1,
+                            En, m1, m2); 
+    
+    std::cout<<"K3iso = "<<std::endl; 
+    std::cout<<K3iso_mat<<std::endl; 
+    std::cout<<"K3iso inverse = "<<std::endl; 
+    std::cout<<K3iso_mat.inverse()<<std::endl; 
+    std::cout<<"=========================="<<std::endl; 
+    
+    Eigen::MatrixXcd temp_M3df_check;
+    temp_M3df_check = Lsmat*((K3iso_mat.inverse() + F3smat).inverse())*Rsmat; 
+    std::cout<<temp_M3df_check<<std::endl; 
+
 
 }
 
