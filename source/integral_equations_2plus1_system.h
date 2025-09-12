@@ -1864,6 +1864,19 @@ void F3smat_2plus1_system(  Eigen::MatrixXcd &F3smat,
 
 }
 
+
+//This function makes a (2x2) matrix taking a fixed 
+//(p,k) from the matrix elements of L(p) and R(k) 
+void LpRk_mat_builder(  Eigen::MatrixXcd &Lpmat,
+                        Eigen::MatrixXcd &Rkmat, 
+                        Eigen::MatrixXcd &Lpint_mat, 
+                        Eigen::MatrixXcd &Rkint_mat, 
+                        std::vector<comp> &pvec_for_m1m2, 
+                        std::vector<comp> &kvec_for_m1m1,
+                        int i, //position i
+                        int j    )
+{}
+
 //This function makes a K3iso (2x2) matrix based on its
 //definition given in notes. We take the K3iso function to 
 //be isotropic, meaning that they only depend on the total 
@@ -1884,8 +1897,8 @@ void K3iso_mat_2plus1_system(   Eigen::MatrixXcd &K3iso_mat,
 
     Eigen::MatrixXcd temp_K3mat(2, 2); 
 
-    temp_K3mat <<   K3iso, K3iso/(std::sqrt(2)),
-                    K3iso/(std::sqrt(2)), K3iso/2; 
+    temp_K3mat <<   K3iso, K3iso/(std::sqrt(2.0)),
+                    K3iso/(std::sqrt(2.0)), K3iso/2.0; 
 
     K3iso_mat = temp_K3mat; 
 
