@@ -1904,5 +1904,144 @@ void K3iso_mat_2plus1_system(   Eigen::MatrixXcd &K3iso_mat,
 
 }
 
+//this function builds up the M3df part using 
+//K3iso and F3iso and Lp and Rk, since the only 
+//momentum dependent parts are Lp and Rk, the
+//elements of K3iso and F3iso are multiplied 
+//flavour element wise. 
+void M3df_iso_mat_2plus1_system(    Eigen::MatrixXcd &M3df_mat, 
+                                    Eigen::MatrixXcd &Lp_mat, 
+                                    Eigen::MatrixXcd &Rk_mat, 
+                                    Eigen::MatrixXcd &K3iso_mat, 
+                                    Eigen::MatrixXcd &F3inf_mat,
+                                    std::vector<comp> &pvec_for_m1m2,
+                                    std::vector<comp> &kvec_for_m1m1,
+                                    comp En, 
+                                    double m1, 
+                                    double m2   )
+{
+
+    char debug = 'y';
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+    int totsize = size1 + size2; 
+    int count_i = 0; 
+    int count_j = 0; 
+    Eigen::MatrixXcd LRmat; 
+    LRmat = Lp_mat*Rk_mat;
+    
+    if(debug=='y')
+    {
+        std::cout<<"LR_mat = "<<std::endl; 
+        std::cout<<LRmat<<std::endl; 
+    }
+
+    comp K3_11 = K3iso_mat(0,0); 
+    comp K3_12 = K3iso_mat(0,1); 
+    comp K3_21 = K3iso_mat(1,0); 
+    comp K3_22 = K3iso_mat(1,1); 
+
+    comp F3_11 = F3inf_mat(0,0); 
+    comp F3_12 = F3inf_mat(0,1); 
+    comp F3_21 = F3inf_mat(1,0); 
+    comp F3_22 = F3inf_mat(1,1); 
+
+    comp coeff_11 = 1.0/K3_11 + F3_11; 
+    comp coeff_12 = 1.0/K3_12 + F3_12; 
+    comp coeff_21 = 1.0/K3_21 + F3_21; 
+    comp coeff_22 = 1.0/K3_22 + F3_22; 
+
+    Eigen::MatrixXcd M3df_11(size1, size1); 
+    Eigen::MatrixXcd M3df_12(size1, size2); 
+    Eigen::MatrixXcd M3df_21(size2, size1); 
+    Eigen::MatrixXcd M3df_22(size2, size2); 
+
+    M3df_11 = Eigen::MatrixXcd::Zero(size1, size1);
+    M3df_12 = Eigen::MatrixXcd::Zero(size1, size2);
+    M3df_21 = Eigen::MatrixXcd::Zero(size2, size1);
+    M3df_22 = Eigen::MatrixXcd::Zero(size2, size2); 
+
+    //(i,j) = 1,1
+    for(int i=0; i<size1; ++i)
+    {
+        for(int j=0; j<size1; ++j)
+        {
+            if(debug=='y')
+            {
+                std::cout<<"i="<<i<<'\t'
+                         <<"j="<<j<<'\t'
+                         <<"LR="<<LRmat(i,j)<<std::endl; 
+            }
+            comp temp_mdf_val = LRmat(i,j)*coeff_11; 
+            M3df_11(i,j) = temp_mdf_val; 
+        }
+    }
+
+    //(i,j) = 1,2
+    count_i = 0; 
+    
+    for(int i=0; i<size1; ++i)
+    {
+        count_j = 0; 
+        
+        for(int j=size1; j<totsize; ++j)
+        {
+            if(debug=='y')
+            {
+                std::cout<<"i="<<i<<'\t'
+                         <<"j="<<j<<'\t'
+                         <<"LR="<<LRmat(i,j)<<std::endl; 
+            }
+            comp temp_mdf_val = LRmat(i,j)*coeff_12; 
+            M3df_12(i,count_j) = temp_mdf_val;
+            count_j = count_j + 1; 
+        }
+    }
+
+    //(i,j) = 2,1
+    count_i = 0; 
+
+    for(int i=size1; i<totsize; ++i)
+    {
+        count_j = 0; 
+        for(int j=0; j<size1; ++j)
+        {
+            if(debug=='y')
+            {
+                std::cout<<"i="<<i<<'\t'
+                         <<"j="<<j<<'\t'
+                         <<"LR="<<LRmat(i,j)<<std::endl; 
+            }
+            comp temp_mdf_val = LRmat(i,j)*coeff_21; 
+            M3df_21(count_i,j) = temp_mdf_val;
+            count_j = count_j + 1;
+        }
+        count_i = count_i + 1; 
+    }
+
+    //(i,j) = 2,2
+    count_i = 0; 
+
+    for(int i=size1; i<totsize; ++i)
+    {
+        count_j = 0; 
+        for(int j=size1; j<totsize; ++j)
+        {
+            if(debug=='y')
+            {
+                std::cout<<"i="<<i<<'\t'
+                         <<"j="<<j<<'\t'
+                         <<"LR="<<LRmat(i,j)<<std::endl; 
+            }
+            comp temp_mdf_val = LRmat(i,j)*coeff_22; 
+            M3df_22(count_i,count_j) = temp_mdf_val;
+            count_j = count_j + 1;
+        }
+        count_i = count_i + 1; 
+    }
+
+
+}
+
 
 #endif 
