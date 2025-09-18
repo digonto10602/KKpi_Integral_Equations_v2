@@ -4209,7 +4209,11 @@ void test_M3df_parts()
     std::cout<<"Ls(p) x Rs(k) = "<<std::endl; 
     std::cout<<Lsmat*Rsmat<<std::endl; 
 
-
+    Eigen::MatrixXcd M3df_mat; 
+    M3df_iso_mat_2plus1_system( M3df_mat, Lsmat, Rsmat, 
+                                K3iso_mat, F3smat, 
+                                pvec_for_m1m2, kvec_for_m1m1, 
+                                En, m1, m2);
 
 }
 
