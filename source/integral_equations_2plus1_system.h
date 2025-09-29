@@ -1,7 +1,10 @@
 #ifndef INTEGRALEQN_MOM_BASED_H
 #define INTEGRALEQN_MOM_BASED_H
 
+//#include <bits/stdc++.h>
 #include "functions_mom_based.h"
+#include "linear_solvers_cpu.h"
+#include "momentum_vector.h"
 #include<Eigen/Dense> 
 
 
@@ -1477,7 +1480,7 @@ void LSmat_p_2plus1_system( Eigen::MatrixXcd &Lsmat,
     sumDrho_mat << sumDrho_mat11, sumDrho_mat12,
                     sumDrho_mat21, sumDrho_mat22;
 
-    std::cout<<sumDrho_mat<<std::endl; 
+    //std::cout<<sumDrho_mat<<std::endl; 
 
     Eigen::MatrixXcd firstpart = (1.0/3.0*Imat - M2kmat*rhomat);
     Eigen::MatrixXcd firstpart_after_integration(size1+size2, 2); 
@@ -1521,7 +1524,7 @@ void RSmat_p_2plus1_system( Eigen::MatrixXcd &Rsmat,
                             double m1, 
                             double m2  )
 {
-    char debug = 'y'; 
+    char debug = 'n'; 
     double mi = 0, mj = 0, mk = 0; 
     comp ii = {0.0, 1.0};
     comp pi = std::acos(-1.0); 
@@ -1643,7 +1646,7 @@ void RSmat_p_2plus1_system( Eigen::MatrixXcd &Rsmat,
     sumrhoD_mat << sumrhoD_mat11, sumrhoD_mat12,
                     sumrhoD_mat21, sumrhoD_mat22;
 
-    std::cout<<sumrhoD_mat<<std::endl; 
+    //std::cout<<sumrhoD_mat<<std::endl; 
 
     Eigen::MatrixXcd firstpart = (1.0/3.0*Imat - rhomat*M2kmat);
     Eigen::MatrixXcd firstpart_after_integration(2, size1+size2); 
@@ -1684,7 +1687,7 @@ void F3smat_2plus1_system(  Eigen::MatrixXcd &F3smat,
                             double m1, 
                             double m2    )
 {
-    char debug = 'y'; 
+    char debug = 'n'; 
     double mi = 0, mj = 0, mk = 0; 
     comp ii = {0.0, 1.0};
     comp pi = std::acos(-1.0); 
@@ -1921,7 +1924,7 @@ void M3df_iso_mat_2plus1_system(    Eigen::MatrixXcd &M3df_mat,
                                     double m2   )
 {
 
-    char debug = 'y';
+    char debug = 'n';
     int size1 = pvec_for_m1m2.size(); 
     int size2 = kvec_for_m1m1.size(); 
     int totsize = size1 + size2; 
@@ -2040,7 +2043,132 @@ void M3df_iso_mat_2plus1_system(    Eigen::MatrixXcd &M3df_mat,
         count_i = count_i + 1; 
     }
 
+    Eigen::MatrixXcd temp_M3df_mat(totsize, totsize); 
+    temp_M3df_mat << M3df_11, M3df_12, 
+                     M3df_21, M3df_22; 
+    M3df_mat = temp_M3df_mat; 
+}
 
+
+//This function is M3(p,k) = Dmat + M3df which is a 
+//spectator momentum based matrix where the only thing we 
+//pass is the total three-body energy En and two body dynamics
+//along with all the epsilons, and it returns 
+//the M3(p,k) matrix in the 2+1 flavor and spectator 
+//momentum space
+//It is assumed that the energy is above three-particle 
+//threshold 
+void M3_pk_2plus1_system(   Eigen::MatrixXcd &M3mat,
+                            comp En, 
+                            comp total_P, 
+                            std::vector<comp> &pvec,
+                            std::vector<comp> &weights_for_pvec,
+                            std::vector<comp> &kvec,
+                            std::vector<comp> &weights_for_kvec, 
+                            double m1, 
+                            double m2, 
+                            double K3iso0, //K3iso parameters
+                            double K3iso1, //K3iso parameters
+                            double a0_m1, //scattering length for m1, m2
+                            double r0_m1, //eff range for m1, m2
+                            double a0_m2, //scattering length for m1, m1
+                            double r0_m2, //eff range for m1, m1
+                            double eta_1, //symmetry factor for m1, m2
+                            double eta_2, //symmetry factor for m1, m1
+                            double eps_for_m2k, 
+                            double eps_for_ope, 
+                            double eps_for_cutoff,
+                            int number_of_points    )
+{
+    comp ii = {0.0,1.0}; 
+    comp pi = std::acos(-1.0); 
+    
+    comp threeparticle_threshold = m1 + m1 + m2; 
+    comp s = En*En; 
+    
+    comp kmax_for_m1 = pmom(En, 0.0, m1); 
+    comp kmax_for_m2 = pmom(En, 0.0, m2); 
+
+    std::vector<comp> pvec_for_m1m2;
+    std::vector<comp> kvec_for_m1m1; 
+    std::vector<comp> weights_for_pvec_for_m1m2; 
+    std::vector<comp> weights_for_kvec_for_m1m1; 
+
+    simple_momentum_vector(pvec_for_m1m2, weights_for_pvec_for_m1m2, 0.0, kmax_for_m1, number_of_points); 
+    simple_momentum_vector(kvec_for_m1m1, weights_for_kvec_for_m1m1, 0.0, kmax_for_m2, number_of_points); 
+    
+    pvec = pvec_for_m1m2;
+    weights_for_pvec = weights_for_pvec_for_m1m2;
+    kvec = kvec_for_m1m1; 
+    weights_for_kvec = weights_for_kvec_for_m1m1; 
+
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+
+    //building the dS(p,k) matrix 
+    Eigen::MatrixXcd Bmat; 
+    Eigen::MatrixXcd Gmat; 
+    Eigen::MatrixXcd dmat; 
+
+    test_Bmat_2plus1_system_ERE_2(Bmat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_m2k, eps_for_m2k, eps_for_ope, eps_for_ope, eps_for_cutoff, eps_for_cutoff, total_P, a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2); 
+    negative_Gmat_2plus1_system(Gmat, En, pvec_for_m1m2, kvec_for_m1m1, weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, m1, m2, eps_for_ope, eps_for_cutoff, total_P);
+    double relerr;
+    LinearSolver_2(Bmat, dmat, Gmat, relerr);
+
+    //buidling rho matrix 
+    Eigen::MatrixXcd rho_mat; 
+
+    test_rho_mat_builder_2plus1_system(rho_mat, En, pvec_for_m1m2, weights_for_pvec_for_m1m2, kvec_for_m1m1, weights_for_kvec_for_m1m1, total_P, m1, m2, eta_1, eta_2, eps_for_cutoff, eps_for_cutoff);
+
+    //building for M2 matrix 
+    Eigen::MatrixXcd M2mat; 
+
+    test_M2k_mat_builder(M2mat, En, pvec_for_m1m2, kvec_for_m1m1,
+                         weights_for_pvec_for_m1m2, weights_for_kvec_for_m1m1, 
+                         m1, m2, eps_for_m2k, eps_for_m2k, total_P,
+                         a0_m1, r0_m1, eta_1, a0_m2, r0_m2, eta_2 );
+    
+    //building DS(p,k) matrix 
+    Eigen::MatrixXcd Dmat = M2mat*dmat*M2mat;
+
+    //building LS(p) matrix 
+    Eigen::MatrixXcd Lsmat; 
+    LSmat_p_2plus1_system(  Lsmat, M2mat, rho_mat, Dmat, 
+                            pvec_for_m1m2, weights_for_pvec_for_m1m2, 
+                            kvec_for_m1m1, weights_for_kvec_for_m1m1, 
+                            m1, m2); 
+    
+    //building RS(k) matrix 
+    Eigen::MatrixXcd Rsmat; 
+    RSmat_p_2plus1_system(  Rsmat, M2mat, rho_mat, Dmat, 
+                            pvec_for_m1m2, weights_for_pvec_for_m1m2, 
+                            kvec_for_m1m1, weights_for_kvec_for_m1m1, 
+                            m1, m2); 
+
+    //building F3(s) matrix 
+    Eigen::MatrixXcd F3smat;
+    F3smat_2plus1_system(F3smat, rho_mat, M2mat, Dmat, 
+                         pvec_for_m1m2, weights_for_pvec_for_m1m2, 
+                         kvec_for_m1m1, weights_for_kvec_for_m1m1, 
+                         m1, m2); 
+
+    //building K3iso(s) matrix 
+    Eigen::MatrixXcd K3iso_mat; 
+    K3iso_mat_2plus1_system(K3iso_mat, K3iso0, K3iso1,
+                            En, m1, m2);
+    
+    //building M3df(p,k) matrix 
+    Eigen::MatrixXcd M3df_mat; 
+    M3df_iso_mat_2plus1_system( M3df_mat, Lsmat, Rsmat, 
+                                K3iso_mat, F3smat, 
+                                pvec_for_m1m2, kvec_for_m1m1, 
+                                En, m1, m2);
+    
+    //building M3(p,k) matrix 
+    Eigen::MatrixXcd temp_M3_mat;
+    temp_M3_mat = Dmat + M3df_mat; 
+
+    M3mat = temp_M3_mat; 
 }
 
 
