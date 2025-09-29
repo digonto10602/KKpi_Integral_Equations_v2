@@ -6,9 +6,9 @@ for the integral equation which will then be used to solve for KKpi amplitude */
 #define MPHIB_TESTING_H
 
 #include<bits/stdc++.h>
-#include "momentum_vector.h"
+//#include "momentum_vector.h"
 #include "integral_equations_2plus1_system.h"
-#include "linear_solvers_cpu.h"
+//#include "linear_solvers_cpu.h"
 //#include "gpu_solvers.h"
 
 

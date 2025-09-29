@@ -1,7 +1,10 @@
 #include <bits/stdc++.h>
-#include "integral_equations_2plus1_system.h"
 #include "mphib_testing.h"
+
 #include "SA_method_2plus1_system.h"
+
+#include "integral_equations_2plus1_system.h"
+
 
 #define PRINT_PARAM(x) std::cout<<#x<<" = "<<x<<std::endl; 
 
@@ -4214,7 +4217,208 @@ void test_M3df_parts()
                                 K3iso_mat, F3smat, 
                                 pvec_for_m1m2, kvec_for_m1m1, 
                                 En, m1, m2);
+    Eigen::MatrixXcd M3_mat;
+    
+    std::cout<<"D="<<Dmat.rows()<<"x"<<Dmat.cols()<<std::endl;
+    std::cout<<"Mdf="<<M3df_mat.rows()<<"x"<<M3df_mat.cols()<<std::endl;
+    std::cout<<"M3="<<M3_mat.rows()<<"x"<<M3_mat.cols()<<std::endl;
+    
+    M3_mat = Dmat + M3df_mat; 
+    
+    //int size1 = pvec_for_m1m2.size(); 
+    //int size2 = kvec_for_m1m1.size(); 
+    int totsize = size1 + size2; 
+    
+    for(int i=0; i<size1; ++i)
+    {
+        for(int j=0; j<size1; ++j)
+        {
+            comp val = M3_mat(i,j); 
+            comp p = pvec_for_m1m2[i]; 
+            comp k = pvec_for_m1m2[j]; 
+            comp sigp = sigma(En, p, m1, 0.0); 
+            comp sigk = sigma(En, k, m1, 0.0); 
 
+            if(i==0)
+            {
+                std::cout<<std::real(sigp)<<'\t'
+                         <<std::real(sigk)<<'\t'
+                         <<std::real(val)<<'\t'
+                         <<std::imag(val)<<std::endl; 
+            }
+        }
+    }
+}
+
+void test_M3_parts()
+{
+    double mi=0, mj=0; 
+    int indi=0, indj=0; 
+    double m1 = 1.0;
+    double m2 = 0.9;//0.99999999990;//0.999; 
+    double a0_m1 = 2.0; 
+    double a0_m2 = 2.0; 
+    double r0_m1 = 0.0; 
+    double r0_m2 = 0.0; 
+    double eta_1 = 1.0; 
+    double eta_2 = 0.5; 
+    double K3iso0 = 10000; 
+    double K3iso1 = 12000; 
+
+    double En = m1 + m1 + m2 + 0.5;
+    double total_P = 0.0; 
+    double r = 0; 
+    double epsilon_h = 0.0; 
+    double eps_for_m2k = 0.0;
+    double eps_for_ope = 0.0; 
+    double eps_for_cutoff = 0.0; 
+    int number_of_points = 100; 
+
+    std::vector<comp> pvec_for_m1m2;
+    std::vector<comp> weights_for_pvec_for_m1m2;
+    std::vector<comp> kvec_for_m1m1;
+    std::vector<comp> weights_for_kvec_for_m1m1; 
+    Eigen::MatrixXcd M3mat; 
+    M3_pk_2plus1_system(M3mat, En, total_P,
+                        pvec_for_m1m2, weights_for_pvec_for_m1m2,
+                        kvec_for_m1m1, weights_for_kvec_for_m1m1, 
+                        m1, m2, 
+                        K3iso0, K3iso1, 
+                        a0_m1, r0_m1, 
+                        a0_m2, r0_m2, 
+                        eta_1, eta_2, 
+                        eps_for_m2k, eps_for_ope, eps_for_cutoff, 
+                        number_of_points);
+    
+
+    std::ofstream fout; 
+    std::string filename1 = "M3_11_mat.dat"; 
+    std::string filename2 = "M3_12_mat.dat"; 
+    std::string filename3 = "M3_21_mat.dat"; 
+    std::string filename4 = "M3_22_mat.dat"; 
+
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+
+    int totsize = size1 + size2; 
+
+    //(i,j) = 1,1
+    fout.open(filename1.c_str()); 
+    mi = m1; 
+    mj = m1; 
+    indi = 0;
+    indj = 0;
+    for(int i=0; i<size1; ++i)
+    {
+        for(int j=0; j<size1; ++j)
+        {
+            comp val = M3mat(i,j); 
+            comp p = pvec_for_m1m2[i]; 
+            comp k = pvec_for_m1m2[j]; 
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::real(val)<<'\t'
+                <<std::imag(val)<<std::endl; 
+        }
+    }
+    fout.close(); 
+
+    //(i,j) = 1,2
+    fout.open(filename2.c_str()); 
+    mi = m1; 
+    mj = m2; 
+    indi = 0;
+    indj = 0;
+    for(int i=0; i<size1; ++i)
+    {
+        for(int j=size1; j<totsize; ++j)
+        {
+            indj = size1 - j; 
+            comp val = M3mat(i,j); 
+            comp p = pvec_for_m1m2[i]; 
+            comp k = kvec_for_m1m1[indj]; 
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::real(val)<<'\t'
+                <<std::imag(val)<<std::endl; 
+        }
+
+    }
+    fout.close(); 
+
+    //(i,j) = 2,1
+    fout.open(filename3.c_str()); 
+    mi = m2; 
+    mj = m1; 
+    indi = 0;
+    indj = 0;
+    for(int i=size1; i<totsize; ++i)
+    {
+        indi = size1 - i; 
+        for(int j=0; j<size1; ++j)
+        {
+            indj = size1 - j; 
+            comp val = M3mat(i,j); 
+            comp p = kvec_for_m1m1[indi]; 
+            comp k = pvec_for_m1m2[j]; 
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::real(val)<<'\t'
+                <<std::imag(val)<<std::endl; 
+        }
+
+    }
+    fout.close(); 
+
+    //(i,j) = 2,2
+    fout.open(filename4.c_str()); 
+    mi = m2; 
+    mj = m2; 
+    indi = 0;
+    indj = 0;
+    for(int i=size1; i<totsize; ++i)
+    {
+        indi = size1 - i; 
+        for(int j=size1; j<totsize; ++j)
+        {
+            indj = size1 - j; 
+            comp val = M3mat(i,j); 
+            comp p = kvec_for_m1m1[indi]; 
+            comp k = kvec_for_m1m1[indj]; 
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::real(val)<<'\t'
+                <<std::imag(val)<<std::endl; 
+        }
+
+    }
+    fout.close(); 
+    
+    for(int i=0; i<number_of_points; ++i)
+    {
+        for(int j=0; j<number_of_points; ++j)
+        {
+            std::cout<<i<<'\t'<<j<<'\t'<<std::real(M3mat(i,j))<<'\t'<<std::imag(M3mat(i,j))<<std::endl; 
+        }
+    }
+
+    /* Outputs saved in /home/digonto/Codes/Practical_Lattice_v2/OUTPUTS*/
 }
 
 
@@ -4262,6 +4466,7 @@ int main()
     //Mphib_degenerate_testing_vs_En_3d_data_generator();
     //twoplusone_test(); 
 
-    test_M3df_parts(); 
+    //test_M3df_parts(); 
+    test_M3_parts(); 
     return 0;
 }
