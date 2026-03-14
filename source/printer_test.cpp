@@ -4421,6 +4421,596 @@ void test_M3_parts()
     /* Outputs saved in /home/digonto/Codes/Practical_Lattice_v2/OUTPUTS*/
 }
 
+void test_M2_KK_piK()
+{   
+   //  first KK amplitude
+
+    double eta_2 = 0.5; 
+    double atmpi = 0.06906;
+    double atmK = 0.09698;
+    double eps = 0.0;//000000001; 
+    
+    double m1 = atmK/atmpi; 
+    double m2 = atmpi/atmpi; 
+    double atinv = 5.6E3; 
+    double at = 1.0/atinv; 
+    double KKthreshold = m1 + m1; 
+    double piKthreshold = m1 + m2;
+    double sigKKth = KKthreshold*KKthreshold; 
+    double sigpiKth = piKthreshold*piKthreshold; 
+
+    std::cout<<"KK threshold sigma = "<<KKthreshold*KKthreshold<<std::endl; 
+    std::cout<<"piK threshold sigma = "<<piKthreshold*piKthreshold<<std::endl; 
+
+    
+    double En = m1+m1+m2; 
+
+    double total_P = 0.0; 
+    double a_KK = 4.1217*atmpi;
+    double a_piK = 4.04*atmpi;
+    std::cout<<"KK bound state = "<<2.0*std::sqrt(m1*m1 - 1.0/(a_KK*a_KK))<<std::endl;
+    double sigk_ini = -1.0; 
+    double sigk_fin = 16.0;
+    double sigk_points = 1000000.0; 
+    double del_sigk = std::abs(sigk_ini - sigk_fin)/sigk_points; 
+    comp sigb_KK_plus = sigma_b_plus(a_KK, m1, m1); 
+    comp sigb_KK_minus = sigma_b_minus(a_KK, m1, m1);
+    comp sigb_piK_plus = sigma_b_plus(a_piK, m1, m2); 
+    comp sigb_piK_minus = sigma_b_minus(a_piK, m1, m2); 
+    std::cout<<"KK bound state sigb = "<< sigb_KK_plus << " and "<< sigb_KK_minus <<std::endl; 
+    std::cout<<"piK bound state sigb = "<< sigb_piK_plus << " and "<< sigb_piK_minus <<std::endl; 
+    
+    std::ofstream fout; 
+    std::string filename1 = "M2_KK.dat"; 
+    fout.open(filename1.c_str()); 
+
+    for(int i=0; i<sigk_points; ++i)
+    {
+        double sigk = sigk_ini + i*del_sigk; 
+
+        comp M2k = M2k_ERE_s2k(eta_2, En, sigk, total_P, a_KK, 0.0, m1, m1, m1, eps); 
+
+        fout << sigk << '\t' 
+             << sigk - sigKKth << '\t'
+             << M2k.real() << '\t'
+             << M2k.imag() << '\t'
+             << std::abs(M2k) << std::endl; 
+    }
+    fout.close(); 
+
+    std::string filename2 = "M2_piK.dat"; 
+    double eta_1 = 1.0; 
+
+    fout.open(filename2.c_str()); 
+
+    double pik_bs_sigk_ini = -1.0; 
+    double pik_bs_sigk_fin = 0.0; 
+    double pik_bs_points = 100000; 
+    double del_pik_bs = std::abs(pik_bs_sigk_ini - pik_bs_sigk_fin)/pik_bs_points; 
+
+    for(int i=0; i<pik_bs_points; ++i)
+    {
+        double sigk = pik_bs_sigk_ini + i*del_pik_bs; 
+
+        comp M2k = M2k_ERE_s2k(eta_1, En, sigk, total_P, a_piK, 0.0, m1, m1, m2, eps); 
+
+        fout << sigk << '\t' 
+             << sigk - sigpiKth << '\t' 
+             << M2k.real() << '\t'
+             << M2k.imag() << '\t'
+             << std::abs(M2k) << std::endl; 
+         
+    }
+    sigk_ini = pik_bs_sigk_fin; 
+    sigk_fin = 16.0;
+    sigk_points = 1000000.0; 
+    del_sigk = std::abs(sigk_ini - sigk_fin)/sigk_points;
+
+    for(int i=0; i<sigk_points; ++i)
+    {
+        double sigk = sigk_ini + i*del_sigk; 
+
+        comp M2k = M2k_ERE_s2k(eta_1, En, sigk, total_P, a_piK, 0.0, m1, m1, m2, eps); 
+
+        fout << sigk << '\t' 
+             << sigk - sigpiKth << '\t'
+             << M2k.real() << '\t'
+             << M2k.imag() << '\t'
+             << std::abs(M2k) << std::endl;  
+    }
+    fout.close(); 
+
+    double En_ini = m1 + m1 + m2; 
+    double En_fin = m1 + m1 + m2 + m2; 
+    double En_points = 10; 
+    double del_En = std::abs(En_ini - En_fin)/En_points; 
+
+    for(int i=0; i<En_points; ++i)
+    {
+        double En = En_ini + i*del_En; 
+
+        comp kmax_val1 = pmom(En, 0.0, m1);
+        comp kmax_val2 = pmom(En, 0.0, m2); 
+
+        std::cout<<En<<'\t'<<kmax_val1<<'\t'<<kmax_val2<<std::endl; 
+    }
+
+
+
+}
+
+void test_M3_dalitz()
+{
+    double mi=0, mj=0; 
+    int indi=0, indj=0; 
+    double atmpi = 0.06906;
+    double atmK = 0.09698;
+    double m1 = atmK/atmpi; 
+    double m2 = atmpi/atmpi;  
+    double a0_m1 = 4.04*atmpi;; 
+    double a0_m2 = 4.1217*atmpi; 
+    double r0_m1 = 0.0; 
+    double r0_m2 = 0.0; 
+    double eta_1 = 1.0; 
+    double eta_2 = 0.5; 
+    double K3iso0 = 1726; 
+    double K3iso1 = -7396; 
+
+    double En = m1 + m1 + m2 + 0.05;
+    double total_P = 0.0; 
+    double r = 0; 
+    double epsilon_h = 0.0; 
+    double eps_for_m2k = 0.0;
+    double eps_for_ope = 0.0; 
+    double eps_for_cutoff = 0.0; 
+    int number_of_points = 250; 
+
+    std::vector<comp> pvec_for_m1m2;
+    std::vector<comp> weights_for_pvec_for_m1m2;
+    std::vector<comp> kvec_for_m1m1;
+    std::vector<comp> weights_for_kvec_for_m1m1; 
+    Eigen::MatrixXcd M3mat; 
+    M3_pk_2plus1_system(M3mat, En, total_P,
+                        pvec_for_m1m2, weights_for_pvec_for_m1m2,
+                        kvec_for_m1m1, weights_for_kvec_for_m1m1, 
+                        m1, m2, 
+                        K3iso0, K3iso1, 
+                        a0_m1, r0_m1, 
+                        a0_m2, r0_m2, 
+                        eta_1, eta_2, 
+                        eps_for_m2k, eps_for_ope, eps_for_cutoff, 
+                        number_of_points);
+    
+
+    std::ofstream fout; 
+    std::string filename1 = "M3_11_mat.dat"; 
+    std::string filename2 = "M3_12_mat.dat"; 
+    std::string filename3 = "M3_21_mat.dat"; 
+    std::string filename4 = "M3_22_mat.dat"; 
+
+    
+
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+
+    Eigen::MatrixXcd M3_11(size1, size1); 
+    Eigen::MatrixXcd M3_12(size1, size2); 
+    Eigen::MatrixXcd M3_21(size2, size1); 
+    Eigen::MatrixXcd M3_22(size2, size2); 
+
+    int totsize = size1 + size2; 
+
+    //(i,j) = 1,1
+    fout.open(filename1.c_str()); 
+    mi = m1; 
+    mj = m1; 
+    indi = 0;
+    indj = 0;
+
+    int count_i = 0; 
+    int count_j = 0; 
+    for(int i=0; i<size1; ++i)
+    {
+        count_j = 0;
+        for(int j=0; j<size1; ++j)
+        {
+            comp val = M3mat(i,j); 
+            comp p = pvec_for_m1m2[i]; 
+            comp k = pvec_for_m1m2[j]; 
+            M3_11(count_i, count_j) = val; 
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::real(val)<<'\t'
+                <<std::imag(val)<<std::endl; 
+            count_j = count_j + 1; 
+        }
+        count_i = count_i + 1; 
+    }
+    fout.close(); 
+
+    //(i,j) = 1,2
+    fout.open(filename2.c_str()); 
+    mi = m1; 
+    mj = m2; 
+    indi = 0;
+    indj = 0;
+    count_i = 0;
+    for(int i=0; i<size1; ++i)
+    {
+        count_j = 0;
+        for(int j=size1; j<totsize; ++j)
+        {
+            indj = size1 - j; 
+            comp val = M3mat(i,j); 
+            comp p = pvec_for_m1m2[i]; 
+            comp k = kvec_for_m1m1[indj]; 
+            M3_12(count_i, count_j) = val;
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::real(val)<<'\t'
+                <<std::imag(val)<<std::endl;
+            count_j = count_j + 1;  
+        }
+        count_i = count_i + 1;
+
+    }
+    fout.close(); 
+
+    //(i,j) = 2,1
+    fout.open(filename3.c_str()); 
+    mi = m2; 
+    mj = m1; 
+    indi = 0;
+    indj = 0;
+    count_i = 0;
+    for(int i=size1; i<totsize; ++i)
+    {
+        indi = size1 - i; 
+        count_j = 0;
+        for(int j=0; j<size1; ++j)
+        {
+            indj = size1 - j; 
+            comp val = M3mat(i,j); 
+            comp p = kvec_for_m1m1[indi]; 
+            comp k = pvec_for_m1m2[j]; 
+            M3_21(count_i, count_j) = val;
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::real(val)<<'\t'
+                <<std::imag(val)<<std::endl; 
+            count_j = count_j + 1;
+        }
+        count_i = count_i + 1;
+
+    }
+    fout.close(); 
+
+    //(i,j) = 2,2
+    fout.open(filename4.c_str()); 
+    mi = m2; 
+    mj = m2; 
+    indi = 0;
+    indj = 0;
+    count_i = 0;
+    for(int i=size1; i<totsize; ++i)
+    {
+        indi = size1 - i; 
+        count_j = 0;
+        for(int j=size1; j<totsize; ++j)
+        {
+            indj = size1 - j; 
+            comp val = M3mat(i,j); 
+            comp p = kvec_for_m1m1[indi]; 
+            comp k = kvec_for_m1m1[indj]; 
+            M3_22(count_i, count_j) = val;
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::real(val)<<'\t'
+                <<std::imag(val)<<std::endl; 
+            count_j = count_j + 1;
+        }
+        count_i = count_i + 1;
+
+    }
+    fout.close(); 
+    
+    for(int i=0; i<number_of_points; ++i)
+    {
+        for(int j=0; j<number_of_points; ++j)
+        {
+            std::cout<<i<<'\t'<<j<<'\t'<<std::real(M3mat(i,j))<<'\t'<<std::imag(M3mat(i,j))<<std::endl; 
+        }
+    }
+
+    Eigen::MatrixXcd M3sym = 2.0*M3_11 + std::sqrt(2)*M3_12 + std::sqrt(2)*M3_21 + M3_22; 
+
+    Eigen::MatrixXd intensity = M3sym.cwiseAbs2(); 
+    std::string filename5 = "intensity_0.dat";
+    
+    fout.open(filename5.c_str()); 
+
+    for(int i=0; i<size1; ++i)
+    {
+        for(int j=0; j<size2; ++j)
+        {
+            comp val = intensity(i,j); 
+            comp p = pvec_for_m1m2[i]; 
+            comp k = kvec_for_m1m1[j];
+            mi = m1; 
+            mj = m2; 
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P);
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::real(val)<<'\t'
+                <<std::imag(val)<<std::endl;
+
+
+        }
+    }
+    fout.close(); 
+
+    /* Outputs saved in /home/digonto/Codes/Practical_Lattice_v2/OUTPUTS*/
+}
+
+
+void test_M3_3d()
+{
+    double mi=0, mj=0; 
+    int indi=0, indj=0; 
+    double atmpi = 0.06906;
+    double atmK = 0.09698;
+    double m1 = atmK/atmpi; 
+    double m2 = atmpi/atmpi;  
+    double a0_m1 = 4.04*atmpi;; 
+    double a0_m2 = 4.1217*atmpi; 
+    double r0_m1 = 0.0; 
+    double r0_m2 = 0.0; 
+    double eta_1 = 1.0; 
+    double eta_2 = 0.5; 
+    double K3iso0 = 1726; 
+    double K3iso1 = -7396; 
+
+    double En1 = m1 + m1 + m2; 
+    double En2 = m1 + m1 + m2 + m2; 
+    double En = (En1 + En2)/2.0; 
+    double total_P = 0.0; 
+    double r = 0; 
+    double epsilon_h = 0.0; 
+    double eps_for_m2k = 0.0001;
+    double eps_for_ope = 0.0001; 
+    double eps_for_cutoff = 0.0; 
+    int number_of_points = 2500; 
+
+    std::vector<comp> pvec_for_m1m2;
+    std::vector<comp> weights_for_pvec_for_m1m2;
+    std::vector<comp> kvec_for_m1m1;
+    std::vector<comp> weights_for_kvec_for_m1m1; 
+    Eigen::MatrixXcd M3mat; 
+    M3_pk_2plus1_system(M3mat, En, total_P,
+                        pvec_for_m1m2, weights_for_pvec_for_m1m2,
+                        kvec_for_m1m1, weights_for_kvec_for_m1m1, 
+                        m1, m2, 
+                        K3iso0, K3iso1, 
+                        a0_m1, r0_m1, 
+                        a0_m2, r0_m2, 
+                        eta_1, eta_2, 
+                        eps_for_m2k, eps_for_ope, eps_for_cutoff, 
+                        number_of_points);
+    
+
+    std::ofstream fout; 
+    std::string filename1 = "M3_11_mat.dat"; 
+    std::string filename2 = "M3_12_mat.dat"; 
+    std::string filename3 = "M3_21_mat.dat"; 
+    std::string filename4 = "M3_22_mat.dat"; 
+
+    
+
+    int size1 = pvec_for_m1m2.size(); 
+    int size2 = kvec_for_m1m1.size(); 
+
+    Eigen::MatrixXcd M3_11(size1, size1); 
+    Eigen::MatrixXcd M3_12(size1, size2); 
+    Eigen::MatrixXcd M3_21(size2, size1); 
+    Eigen::MatrixXcd M3_22(size2, size2); 
+
+    int totsize = size1 + size2; 
+
+    //(i,j) = 1,1
+    fout.open(filename1.c_str()); 
+    mi = m1; 
+    mj = m1; 
+    indi = 0;
+    indj = 0;
+
+    int count_i = 0; 
+    int count_j = 0; 
+    for(int i=0; i<size1; ++i)
+    {
+        count_j = 0;
+        for(int j=0; j<size1; ++j)
+        {
+            comp val = M3mat(i,j); 
+            comp p = pvec_for_m1m2[i]; 
+            comp k = pvec_for_m1m2[j]; 
+            M3_11(count_i, count_j) = val; 
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::abs(val)<<'\t'
+                <<std::imag(val)<<std::endl; 
+            count_j = count_j + 1; 
+        }
+        count_i = count_i + 1; 
+    }
+    fout.close(); 
+
+    //(i,j) = 1,2
+    fout.open(filename2.c_str()); 
+    mi = m1; 
+    mj = m2; 
+    indi = 0;
+    indj = 0;
+    count_i = 0;
+    for(int i=0; i<size1; ++i)
+    {
+        count_j = 0;
+        for(int j=size1; j<totsize; ++j)
+        {
+            indj = j - size1; 
+            comp val = M3mat(i,j); 
+            comp p = pvec_for_m1m2[i]; 
+            comp k = kvec_for_m1m1[indj]; 
+            M3_12(count_i, count_j) = val;
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::abs(val)<<'\t'
+                <<std::imag(val)<<std::endl;
+            count_j = count_j + 1;  
+        }
+        count_i = count_i + 1;
+
+    }
+    fout.close(); 
+
+    //(i,j) = 2,1
+    fout.open(filename3.c_str()); 
+    mi = m2; 
+    mj = m1; 
+    indi = 0;
+    indj = 0;
+    count_i = 0;
+    for(int i=size1; i<totsize; ++i)
+    {
+        indi = i - size1; 
+        count_j = 0;
+        for(int j=0; j<size1; ++j)
+        {
+            indj = j - size1; 
+            comp val = M3mat(i,j); 
+            comp p = kvec_for_m1m1[indi]; 
+            comp k = pvec_for_m1m2[j]; 
+            M3_21(count_i, count_j) = val;
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::abs(val)<<'\t'
+                <<std::imag(val)<<std::endl; 
+            count_j = count_j + 1;
+        }
+        count_i = count_i + 1;
+
+    }
+    fout.close(); 
+
+    //(i,j) = 2,2
+    fout.open(filename4.c_str()); 
+    mi = m2; 
+    mj = m2; 
+    indi = 0;
+    indj = 0;
+    count_i = 0;
+    for(int i=size1; i<totsize; ++i)
+    {
+        indi = i - size1; 
+        count_j = 0;
+        for(int j=size1; j<totsize; ++j)
+        {
+            indj = j - size1; 
+            comp val = M3mat(i,j); 
+            comp p = kvec_for_m1m1[indi]; 
+            comp k = kvec_for_m1m1[indj]; 
+            M3_22(count_i, count_j) = val;
+
+            comp sigp = sigma(En, p, mi, total_P); 
+            comp sigk = sigma(En, k, mj, total_P); 
+
+            fout<<std::real(sigp)<<'\t'
+                <<std::real(sigk)<<'\t'
+                <<std::abs(val)<<'\t'
+                <<std::imag(val)<<std::endl; 
+            count_j = count_j + 1;
+        }
+        count_i = count_i + 1;
+
+    }
+    fout.close(); 
+    
+    for(int i=0; i<number_of_points; ++i)
+    {
+        for(int j=0; j<number_of_points; ++j)
+        {
+            std::cout<<i<<'\t'<<j<<'\t'<<std::real(M3mat(i,j))<<'\t'<<std::imag(M3mat(i,j))<<std::endl; 
+        }
+    }
+
+    //Eigen::MatrixXcd M3sym = 2.0*M3_11 + std::sqrt(2)*M3_12 + std::sqrt(2)*M3_21 + M3_22; 
+
+    for(int i=0; i<size1; ++i)
+    {
+        std::cout<<i<<'\t'<<pvec_for_m1m2[i]<<std::endl;
+
+    }
+
+    for(int i=0; i<size2; ++i)
+    {
+        std::cout<<i<<'\t'<<kvec_for_m1m1[i]<<std::endl;
+    }
+    std::cout<<M3mat<<std::endl;
+
+    /* Outputs saved in /home/digonto/Codes/Practical_Lattice_v2/OUTPUTS*/
+
+    
+
+    std::string filenameG = "Gpolecheck.dat"; 
+    fout.open(filenameG.c_str());
+
+    for(int i=0; i<size1; ++i)
+    {
+        comp p = pvec_for_m1m2[i];
+        
+        for(int j=0; j<size2; ++j)
+        {
+            comp k = kvec_for_m1m1[j]; 
+            comp G11 = GS_pk(En, p, k, m1, m1, m2, 0.0, 0.0); 
+            comp G12 = GS_pk(En, p, k, m1, m2, m1, 0.0, 0.0); 
+            comp G21 = GS_pk(En, p, k, m2, m1, m2, 0.0, 0.0); 
+
+            fout << p.real() << '\t' << k.real() << '\t'
+                 << G11.real() << '\t' << G12.real() << '\t' << G21.real() << std::endl; 
+        }
+    }
+    fout.close(); 
+}
+
+
 
 int main()
 {
@@ -4467,6 +5057,11 @@ int main()
     //twoplusone_test(); 
 
     //test_M3df_parts(); 
-    test_M3_parts(); 
+    //test_M3_parts(); 
+
+    //plot M2 for KK and piK
+    //test_M2_KK_piK();
+    //test_M3_dalitz();
+    test_M3_3d();
     return 0;
 }
